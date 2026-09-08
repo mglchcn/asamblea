@@ -48,6 +48,22 @@
             border: 1px solid #e2e8f0;
         }
 
+        /* Utilidades del Modal */
+        #legislator-modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #legislator-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #legislator-modal .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #legislator-modal.show .modal-content {
+            transform: scale(1);
+        }
+
         /* Utilidades de Animación */
         .fade-in {
             animation: fadeIn 0.3s ease-in-out;
@@ -105,6 +121,12 @@
                 <button id="btn-supraestatales" data-camera="supraestatales" class="chamber-btn px-6 py-2.5 rounded-lg text-sm font-bold text-gray-600 transition-all border border-transparent hover:bg-gray-50 whitespace-nowrap">
                     Supraestatales (9)
                 </button>
+                <button id="btn-comisiones" data-camera="comisiones" class="chamber-btn px-6 py-2.5 rounded-lg text-sm font-bold text-gray-600 transition-all border border-transparent hover:bg-gray-50 whitespace-nowrap">
+                    Comisiones
+                </button>
+                <button id="btn-bancada" data-camera="bancada" class="chamber-btn px-6 py-2.5 rounded-lg text-sm font-bold text-gray-600 transition-all border border-transparent hover:bg-gray-50 whitespace-nowrap">
+                    Jefes de Bancada
+                </button>
             </div>
         </div>
 
@@ -127,7 +149,7 @@
                 <!-- Contenedor de la Leyenda e Info (Derecha) -->
                 <div class="lg:col-span-4 flex flex-col gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex-grow">
-                        <h3 class="text-sm font-extrabold text-gray-400 uppercase tracking-wider mb-5">Fuerzas Políticas</h3>
+                        <h3 class="text-sm font-extrabold text-gray-400 uppercase tracking-wider mb-5">Clasificación Actual</h3>
                         <div id="legend" class="space-y-4">
                             <!-- Inserción dinámica -->
                         </div>
@@ -190,6 +212,7 @@
                             <option value="departamento">Departamento</option>
                             <option value="partido">Partido</option>
                             <option value="comision">Comisión</option>
+                            <option value="cargo">Cargo / Rol</option>
                         </select>
                         <span class="text-gray-300">|</span>
                         <div class="flex items-center text-sm font-semibold text-gray-500">Sub-grupo:</div>
@@ -198,6 +221,7 @@
                             <option value="partido">Partido</option>
                             <option value="departamento">Departamento</option>
                             <option value="comision">Comisión</option>
+                            <option value="cargo">Cargo / Rol</option>
                         </select>
                     </div>
                 </div>
@@ -225,6 +249,88 @@
             
             <div class="p-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
                 <span class="text-sm font-semibold text-gray-600">Total registros: <span id="table-count" class="text-blue-700 font-bold">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Información Detallada del Legislador -->
+    <div id="legislator-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm opacity-0 invisible">
+        <div class="modal-content relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <!-- Cinta de color del partido (Dinámica) -->
+            <div id="modal-color-band" class="h-3 w-full bg-gray-300"></div>
+            
+            <!-- Botón de Cerrar -->
+            <button onclick="closeLegislatorModal()" class="absolute top-5 right-5 p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 rounded-full transition-colors focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+
+            <!-- Contenido Scrollable -->
+            <div class="p-6 md:p-8 overflow-y-auto custom-scrollbar">
+                
+                <!-- Encabezado Modal: Badges -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <span id="modal-badge-camara" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold uppercase tracking-wider border border-gray-200">Cámara</span>
+                    <span id="modal-badge-partido" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wider border border-blue-100">Partido</span>
+                    <span id="modal-badge-depto" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold uppercase tracking-wider border border-gray-200">Departamento</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Columna Izquierda: Titular -->
+                    <div class="flex flex-col items-center text-center bg-gray-50 p-6 rounded-xl border border-gray-100">
+                        <div class="relative mb-4">
+                            <img id="modal-foto-titular" src="" alt="Titular" class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md bg-white">
+                            <div id="modal-icon-titular" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full border-2 border-white shadow-sm" title="Titular">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+                        <div id="modal-rol-titular" class="text-xs text-blue-600 uppercase font-black tracking-widest mb-1">Titular</div>
+                        <h3 id="modal-nombre-titular" class="text-xl font-extrabold text-gray-900 leading-tight mb-2">Nombre Titular</h3>
+                        <p id="modal-cargo-titular" class="text-sm font-medium text-gray-500">Cargo Específico</p>
+                    </div>
+
+                    <!-- Columna Derecha: Suplente -->
+                    <div class="flex flex-col items-center text-center bg-gray-50 p-6 rounded-xl border border-gray-100 relative">
+                        <!-- Línea conectora visual para pantallas grandes -->
+                        <div class="hidden md:block absolute top-1/2 -left-4 w-8 border-t-2 border-dashed border-gray-300"></div>
+                        
+                        <div class="relative mb-4">
+                            <img id="modal-foto-suplente" src="" alt="Suplente" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md bg-white opacity-90">
+                            <div class="absolute bottom-0 right-0 bg-gray-400 text-white p-1.5 rounded-full border-2 border-white shadow-sm" title="Suplente">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Legislador Suplente</div>
+                        <h3 id="modal-nombre-suplente" class="text-lg font-bold text-gray-700 leading-tight mb-2">Nombre Suplente</h3>
+                    </div>
+                </div>
+
+                <!-- Detalles Adicionales -->
+                <div class="mt-8 border-t border-gray-100 pt-6">
+                    <h4 class="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-4">Información de la Asignación</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-white border border-gray-200 rounded-lg p-3 flex items-start gap-3 shadow-sm">
+                            <div class="bg-blue-50 p-2 rounded-md text-blue-600 shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Circunscripción / Posición</div>
+                                <div id="modal-circunscripcion" class="font-bold text-gray-800 text-sm mt-0.5">C-XX</div>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-3 flex items-start gap-3 shadow-sm">
+                            <div class="bg-orange-50 p-2 rounded-md text-orange-600 shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clip-rule="evenodd" /></svg>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Comisión Asignada</div>
+                                <div id="modal-comision" class="font-bold text-gray-800 text-sm mt-0.5">Nombre de Comisión</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -264,6 +370,9 @@
         const elMajorityAbs = document.getElementById("majority-absolute");
         const elMajorityTwoThirds = document.getElementById("majority-twothirds");
 
+        // Elementos del Modal
+        const modalEl = document.getElementById("legislator-modal");
+
         // Botones de cámara
         const chamberBtns = document.querySelectorAll('.chamber-btn');
 
@@ -300,16 +409,21 @@
 
         function createMockLeg(party, idx, camara, depto, circ) {
             const abrev = camara === "diputados" ? "Dip." : (camara === "senadores" ? "Sen." : "Sup.");
+            const comisionesList = ["Constitución", "Economía", "Salud", "Educación", "Justicia", "Política Internacional"];
+            const cargo = (idx === 0) ? "Jefe de Bancada" : "Legislador";
             return {
                 titular: `${abrev} Titular ${party.partido} ${idx+1}`,
                 suplente: `${abrev} Suplente ${party.partido} ${idx+1}`,
+                cargo: cargo,
                 partido: party.partido,
                 camara: camara,
                 departamento: depto,
                 circunscripcion: circ,
-                comision: ["Constitución", "Economía", "Salud", "Educación", "Justicia"][idx % 5],
+                comision: comisionesList[idx % comisionesList.length],
                 color: party.color,
-                order: party.order
+                order: party.order,
+                fotoTitular: null,
+                fotoSuplente: null
             };
         }
 
@@ -356,15 +470,31 @@
                                 let partido = getVal("partido", "fuerza", "sigla") || "Independiente";
                                 let color = getVal("color") || fallbackData.find(f => f.partido.toLowerCase() === partido.toLowerCase())?.color || stringToColor(partido);
 
+                                // Extraer Fotos de Titular y Suplente y formatear URLs de Drive
+                                const processDriveUrl = (url) => {
+                                    if (!url) return null;
+                                    if (url.includes('drive.google.com/file/d/')) {
+                                        const match = url.match(/[-\w]{25,}/); // Extraer el ID
+                                        if (match) return `https://drive.google.com/uc?export=view&id=${match[0]}`;
+                                    }
+                                    return url;
+                                };
+
+                                let rawFotoTitular = getVal("foto titular", "foto", "fotografia", "fotografía", "imagen", "enlace foto", "url foto");
+                                let rawFotoSuplente = getVal("foto suplente", "fotografia suplente", "fotografía suplente", "imagen suplente");
+
                                 legisladoresData.push({
                                     titular: titular,
                                     suplente: getVal("suplente", "nombre suplente") || "No registrado",
+                                    cargo: getVal("cargo", "rol", "funcion", "función", "puesto", "jefatura") || "Legislador",
                                     partido: partido,
                                     camara: camaraLimpia,
                                     departamento: getVal("departamento", "region", "región", "dpto") || "N/A",
                                     circunscripcion: getVal("circunscripcion", "circunscripción", "posicion", "posición") || "N/A",
                                     comision: getVal("comision", "comisión", "comite", "comité") || "Sin asignar",
                                     color: color,
+                                    fotoTitular: processDriveUrl(rawFotoTitular),
+                                    fotoSuplente: processDriveUrl(rawFotoSuplente),
                                     order: parseInt(getVal("orden", "order") || fallbackData.find(f => f.partido === partido)?.order || 99)
                                 });
                             }
@@ -443,34 +573,63 @@
         });
 
         function updateDashboard() {
-            const activeLegisladores = legisladoresData.filter(d => d.camara === currentChamber);
+            let activeLegisladores = [];
+            let groupByKey = 'partido'; // Por defecto agrupar por partido
+
+            // 1. Filtrado dinámico según la pestaña seleccionada
+            if (currentChamber === 'comisiones') {
+                activeLegisladores = legisladoresData.filter(d => d.comision && !['sin asignar', 'n/a', ''].includes(d.comision.toLowerCase()));
+                groupByKey = 'comision'; // En la vista de comisiones, agrupamos por comisión
+            } else if (currentChamber === 'bancada') {
+                activeLegisladores = legisladoresData.filter(d => d.cargo && (d.cargo.toLowerCase().includes('jefe') || d.cargo.toLowerCase().includes('bancada') || d.cargo.toLowerCase().includes('jefatura')));
+                groupByKey = 'partido';
+            } else {
+                activeLegisladores = legisladoresData.filter(d => d.camara === currentChamber);
+            }
+            
             const totalSeats = activeLegisladores.length;
 
             if (totalSeats === 0) {
-                d3.select("#chart").html(`<div class="text-gray-400 font-bold text-xl">Sin datos para esta cámara</div>`);
+                d3.select("#chart").html(`<div class="text-gray-400 font-bold text-xl">Sin datos para esta clasificación</div>`);
                 legendContainer.innerHTML = '';
                 elMajorityAbs.textContent = "0";
                 elMajorityTwoThirds.textContent = "0";
             } else {
-                // Agrupar por partido para gráfico y leyenda
-                let partyMap = new Map();
+                // 2. Agrupar para gráfico y leyenda dinámicamente
+                let groupMap = new Map();
                 activeLegisladores.forEach(leg => {
-                    if (!partyMap.has(leg.partido)) {
-                        partyMap.set(leg.partido, { partido: leg.partido, count: 0, color: leg.color, order: leg.order, miembros: [] });
+                    const key = groupByKey === 'comision' ? leg.comision : leg.partido;
+                    if (!groupMap.has(key)) {
+                        const color = groupByKey === 'comision' ? stringToColor(leg.comision) : leg.color;
+                        groupMap.set(key, { name: key, count: 0, color: color, order: leg.order, miembros: [] });
                     }
-                    partyMap.get(leg.partido).count++;
-                    partyMap.get(leg.partido).miembros.push(leg);
+                    groupMap.get(key).count++;
+                    groupMap.get(key).miembros.push(leg);
                 });
 
-                const partyGroups = Array.from(partyMap.values());
-                const chartData = [...partyGroups].sort((a, b) => a.order - b.order);
-                const legendData = [...partyGroups].sort((a, b) => b.count - a.count);
+                const groups = Array.from(groupMap.values());
+                const chartData = [...groups].sort((a, b) => {
+                    if (groupByKey === 'comision') return b.count - a.count;
+                    return (a.order || 0) - (b.order || 0);
+                });
+                const legendData = [...groups].sort((a, b) => b.count - a.count);
 
-                elMajorityAbs.textContent = Math.floor(totalSeats / 2) + 1 + " escaños";
-                elMajorityTwoThirds.textContent = Math.ceil(totalSeats * (2/3)) + " escaños";
+                elMajorityAbs.textContent = Math.floor(totalSeats / 2) + 1 + " registros";
+                elMajorityTwoThirds.textContent = Math.ceil(totalSeats * (2/3)) + " registros";
 
-                drawParliamentChart(chartData, totalSeats);
-                drawLegend(legendData);
+                drawParliamentChart(chartData, totalSeats, groupByKey);
+                drawLegend(legendData, groupByKey);
+            }
+
+            // Forzar agrupación en tabla dependiendo de la pestaña
+            if (currentChamber === 'comisiones' && !groupByState) {
+                groupSelect.value = 'comision';
+                groupByState = 'comision';
+                crossSelect.disabled = false;
+            } else if (currentChamber === 'bancada' && !groupByState) {
+                groupSelect.value = 'partido';
+                groupByState = 'partido';
+                crossSelect.disabled = false;
             }
 
             populateFilters(activeLegisladores);
@@ -492,7 +651,12 @@
                 rowCounts = [totalSeats];
                 numRows = 1;
             } else {
-                // Cálculo dinámico proporcional
+                // Cálculo dinámico proporcional para las nuevas vistas (Comisiones, Bancadas)
+                if (totalSeats > 100) numRows = 5;
+                else if (totalSeats > 50) numRows = 4;
+                else if (totalSeats > 20) numRows = 3;
+                else numRows = 2;
+
                 let rowRadii = [];
                 for (let i = 0; i < numRows; i++) rowRadii.push(innerRadius + (outerRadius - innerRadius) * (i / Math.max(1, (numRows - 1))));
                 let totalArcLength = rowRadii.reduce((sum, r) => sum + r * Math.PI, 0);
@@ -530,7 +694,7 @@
             return points;
         }
 
-        function drawParliamentChart(data, totalSeats) {
+        function drawParliamentChart(data, totalSeats, groupByKey = 'partido') {
             d3.select("#chart").selectAll("*").remove();
             
             // Configurar viewport basado en el contenedor
@@ -558,10 +722,14 @@
             
             let seatIndex = 0;
             const mappedPoints = [];
-            data.forEach(party => {
-                party.miembros.forEach(miembro => {
+            data.forEach(group => {
+                group.miembros.forEach(miembro => {
                     if (seatIndex < points.length) {
-                        mappedPoints.push({ ...points[seatIndex], ...miembro });
+                        mappedPoints.push({ 
+                            ...points[seatIndex], 
+                            ...miembro,
+                            displayColor: group.color // Usar el color del grupo o comisión asignado
+                        });
                         seatIndex++;
                     }
                 });
@@ -574,7 +742,7 @@
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
                 .attr("r", 0)
-                .attr("fill", d => d.color)
+                .attr("fill", d => d.displayColor)
                 .style("cursor", "pointer")
                 .style("stroke", "#fff")
                 .style("stroke-width", "1px")
@@ -586,24 +754,63 @@
                         .style("stroke-width", "2px");
                         
                     tooltip.transition().duration(200).style("opacity", 1);
-                    tooltip.html(`
-                        <div class="p-3 w-64 md:w-72">
-                            <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
-                                <span class="text-xs font-black uppercase tracking-wider" style="color: ${d.color};">${d.partido}</span>
-                                <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase">${d.camara}</span>
-                            </div>
-                            <div class="mb-2">
-                                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Titular</div>
-                                <div class="font-bold text-gray-800 text-sm leading-tight">${d.titular}</div>
-                            </div>
-                            <div class="mb-3">
+                    
+                    // Generar Avatar Titular
+                    const avatarTitular = d.fotoTitular ? d.fotoTitular : `https://ui-avatars.com/api/?name=${encodeURIComponent(d.titular)}&background=f1f5f9&color=64748b&size=128`;
+                    
+                    // Generar Avatar Suplente
+                    let suplenteHtml = '';
+                    if (d.suplente && d.suplente.toLowerCase() !== 'no registrado' && d.suplente.toLowerCase() !== 'n/a') {
+                        const avatarSuplente = d.fotoSuplente ? d.fotoSuplente : `https://ui-avatars.com/api/?name=${encodeURIComponent(d.suplente)}&background=f8fafc&color=94a3b8&size=128`;
+                        suplenteHtml = `
+                        <div class="flex items-start gap-3 mb-3">
+                            <img src="${avatarSuplente}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(d.suplente)}&background=f8fafc&color=94a3b8&size=128'" alt="${d.suplente}" class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white opacity-90">
+                            <div>
                                 <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Suplente</div>
                                 <div class="font-medium text-gray-600 text-xs leading-tight">${d.suplente}</div>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 rounded p-2 border border-gray-100">
-                                <div><span class="block text-[9px] text-gray-400 uppercase font-bold">Dpto</span><span class="font-bold text-gray-700">${d.departamento}</span></div>
-                                <div><span class="block text-[9px] text-gray-400 uppercase font-bold">Circ</span><span class="font-bold text-gray-700">${d.circunscripcion}</span></div>
-                                <div class="col-span-2 mt-1"><span class="block text-[9px] text-gray-400 uppercase font-bold">Comisión</span><span class="font-bold text-gray-700 truncate block">${d.comision}</span></div>
+                        </div>`;
+                    } else {
+                        suplenteHtml = `
+                        <div class="mb-3">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Suplente</div>
+                            <div class="font-medium text-gray-400 text-xs italic leading-tight">No registrado</div>
+                        </div>`;
+                    }
+
+                    tooltip.html(`
+                        <div class="p-3 w-64 md:w-72">
+                            <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
+                                <span class="text-xs font-black uppercase tracking-wider" style="color: ${d.displayColor};">${groupByKey === 'comision' ? d.comision : d.partido}</span>
+                                <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase">${d.camara}</span>
+                            </div>
+                            
+                            <!-- Titular -->
+                            <div class="flex items-start gap-3 mb-3">
+                                <img src="${avatarTitular}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(d.titular)}&background=f1f5f9&color=64748b&size=128'" alt="${d.titular}" class="w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white">
+                                <div>
+                                    ${d.cargo && d.cargo !== 'Legislador' ? `<div class="text-[10px] text-blue-600 uppercase font-black tracking-widest mb-0.5">${d.cargo}</div>` : `<div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Titular</div>`}
+                                    <div class="font-bold text-gray-800 text-sm leading-tight">${d.titular}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Suplente -->
+                            ${suplenteHtml}
+
+                            <!-- Ubicación -->
+                            <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 rounded-lg p-2 border border-gray-100 mt-2">
+                                <div>
+                                    <span class="block text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Departamento</span>
+                                    <span class="font-bold text-gray-700 truncate block">${d.departamento}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Circ. / Posición</span>
+                                    <span class="font-bold text-gray-700 truncate block">${d.circunscripcion}</span>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-3 pt-2 border-t border-gray-100">
+                                <span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded-full border border-gray-100">👆 Haz clic para ver detalles</span>
                             </div>
                         </div>
                     `)
@@ -617,6 +824,16 @@
                         .style("stroke", "#fff")
                         .style("stroke-width", "1px");
                     tooltip.transition().duration(200).style("opacity", 0);
+                })
+                .on("click", function(event, d) {
+                    // Prevenir que el click se propague y cierre el modal inmediatamente
+                    event.stopPropagation();
+                    
+                    // Ocultar tooltip al abrir el modal para que no estorbe
+                    tooltip.style("opacity", 0);
+                    
+                    // Abrir la ventana con los datos
+                    openLegislatorModal(d);
                 })
                 .transition()
                 .delay((d, i) => i * (800 / totalSeats))
@@ -635,21 +852,26 @@
                 .transition().duration(1000).style("opacity", 1);
         }
 
-        function drawLegend(data) {
+        function drawLegend(data, groupByKey = 'partido') {
             legendContainer.innerHTML = '';
             
-            const cameraLabel = currentChamber === 'diputados' ? 'Diputados' : (currentChamber === 'senadores' ? 'Senadores' : 'Supraestatales');
+            let itemLabel = "Escaños";
+            if(currentChamber === 'diputados') itemLabel = 'Diputados';
+            else if(currentChamber === 'senadores') itemLabel = 'Senadores';
+            else if(currentChamber === 'supraestatales') itemLabel = 'Supraestatales';
+            else if(currentChamber === 'bancada') itemLabel = 'Miembros';
+            else if(currentChamber === 'comisiones') itemLabel = 'Miembros';
 
-            data.forEach((party, index) => {
+            data.forEach((group, index) => {
                 const animDelay = index * 0.08;
                 const itemHTML = `
                     <div class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-default" style="animation: slideIn 0.4s ease forwards ${animDelay}s; opacity: 0; transform: translateX(-15px);">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0" style="background-color: ${party.color};">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0" style="background-color: ${group.color};">
                             <svg class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                         </div>
                         <div class="ml-4">
-                            <div class="font-extrabold text-gray-800 text-base leading-tight">${party.partido}</div>
-                            <div class="text-gray-500 text-sm font-medium">${party.count} ${cameraLabel}</div>
+                            <div class="font-extrabold text-gray-800 text-base leading-tight">${group.name}</div>
+                            <div class="text-gray-500 text-sm font-medium">${group.count} ${itemLabel}</div>
                         </div>
                     </div>
                 `;
@@ -657,7 +879,6 @@
             });
         }
 
-        
         // Listeners de Tabla
         searchInput.addEventListener('input', renderTable);
         filterPartido.addEventListener('change', (e) => { filtersState.partido = e.target.value; renderTable(); });
@@ -711,7 +932,15 @@
         }
 
         function renderTable(activeLegisladores = null) {
-            if(!activeLegisladores) activeLegisladores = legisladoresData.filter(d => d.camara === currentChamber);
+            if(!activeLegisladores) {
+                if (currentChamber === 'comisiones') {
+                    activeLegisladores = legisladoresData.filter(d => d.comision && !['sin asignar', 'n/a', ''].includes(d.comision.toLowerCase()));
+                } else if (currentChamber === 'bancada') {
+                    activeLegisladores = legisladoresData.filter(d => d.cargo && (d.cargo.toLowerCase().includes('jefe') || d.cargo.toLowerCase().includes('bancada') || d.cargo.toLowerCase().includes('jefatura')));
+                } else {
+                    activeLegisladores = legisladoresData.filter(d => d.camara === currentChamber);
+                }
+            }
 
             // 1. Filtros Dropdowns
             let data = activeLegisladores.filter(leg => {
@@ -728,7 +957,8 @@
                     (leg.suplente && leg.suplente.toLowerCase().includes(term)) ||
                     (leg.partido && leg.partido.toLowerCase().includes(term)) ||
                     (leg.departamento && leg.departamento.toLowerCase().includes(term)) ||
-                    (leg.comision && leg.comision.toLowerCase().includes(term))
+                    (leg.comision && leg.comision.toLowerCase().includes(term)) ||
+                    (leg.camara && leg.camara.toLowerCase().includes(term))
                 );
             }
 
@@ -814,25 +1044,124 @@
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-blue-50/50 transition-colors';
             
-            // Etiqueta de color para partido
+            // Etiqueta de color para partido y cargo
             const partyLabel = `
-                <div class="flex items-center">
-                    <div class="w-2.5 h-2.5 rounded-full mr-2 shadow-sm" style="background-color: ${row.color}"></div>
-                    <span class="font-bold text-gray-700">${row.partido}</span>
+                <div class="flex flex-col">
+                    <div class="flex items-center">
+                        <div class="w-2.5 h-2.5 rounded-full mr-2 shadow-sm" style="background-color: ${row.color}"></div>
+                        <span class="font-bold text-gray-700">${row.partido}</span>
+                    </div>
+                    ${row.cargo && row.cargo !== 'Legislador' ? `<span class="text-[10px] text-gray-400 uppercase font-bold mt-0.5 tracking-wider">${row.cargo}</span>` : ''}
                 </div>
             `;
+
+            // Avatar en Tabla Titular
+            const avatarTitular = row.fotoTitular ? row.fotoTitular : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.titular)}&background=f1f5f9&color=64748b&size=64`;
+            
+            // Avatar en Tabla Suplente
+            let suplenteCell = `<span class="text-gray-400 italic font-normal">No registrado</span>`;
+            if (row.suplente && row.suplente.toLowerCase() !== 'no registrado' && row.suplente.toLowerCase() !== 'n/a') {
+                const avatarSuplente = row.fotoSuplente ? row.fotoSuplente : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.suplente)}&background=f8fafc&color=94a3b8&size=64`;
+                suplenteCell = `
+                    <div class="flex items-center gap-3">
+                        <img src="${avatarSuplente}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(row.suplente)}&background=f8fafc&color=94a3b8&size=64'" class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white opacity-90" alt="Foto Suplente">
+                        <span class="font-medium text-gray-600">${row.suplente}</span>
+                    </div>
+                `;
+            }
 
             tr.innerHTML = `
                 <td class="p-3 text-gray-600 font-medium">${row.departamento}</td>
                 <td class="p-3"><span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-bold uppercase">${row.camara}</span></td>
                 <td class="p-3 text-gray-600 font-medium">${row.circunscripcion}</td>
-                <td class="p-3 font-bold text-gray-900">${row.titular}</td>
-                <td class="p-3 text-gray-500">${row.suplente}</td>
+                <td class="p-3">
+                    <div class="flex items-center gap-3">
+                        <img src="${avatarTitular}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(row.titular)}&background=f1f5f9&color=64748b&size=64'" class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white" alt="Foto Titular">
+                        <span class="font-bold text-gray-900">${row.titular}</span>
+                    </div>
+                </td>
+                <td class="p-3">${suplenteCell}</td>
                 <td class="p-3">${partyLabel}</td>
                 <td class="p-3 text-gray-600 truncate max-w-[150px]" title="${row.comision}">${row.comision}</td>
             `;
             return tr;
         }
+
+        // --- LÓGICA DEL MODAL ---
+        function openLegislatorModal(data) {
+            // Configurar colores y etiquetas base
+            const color = data.displayColor || data.color;
+            document.getElementById('modal-color-band').style.backgroundColor = color;
+            document.getElementById('modal-icon-titular').style.backgroundColor = color;
+            
+            document.getElementById('modal-badge-camara').textContent = data.camara;
+            
+            const badgePartido = document.getElementById('modal-badge-partido');
+            badgePartido.textContent = data.partido;
+            badgePartido.style.color = color;
+            badgePartido.style.borderColor = color;
+            badgePartido.style.backgroundColor = color + '15'; // 15 es opacidad en HEX (aprox 8%)
+            
+            document.getElementById('modal-badge-depto').textContent = data.departamento;
+
+            // Datos del Titular
+            document.getElementById('modal-nombre-titular').textContent = data.titular;
+            document.getElementById('modal-cargo-titular').textContent = data.cargo || 'Legislador Titular';
+            document.getElementById('modal-rol-titular').textContent = data.cargo && data.cargo !== 'Legislador' ? 'Autoridad / Titular' : 'Titular';
+            document.getElementById('modal-foto-titular').src = data.fotoTitular ? data.fotoTitular : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.titular)}&background=f1f5f9&color=64748b&size=256`;
+            // Fallback de imagen en caso de error de carga
+            document.getElementById('modal-foto-titular').onerror = function() {
+                this.onerror = null;
+                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.titular)}&background=f1f5f9&color=64748b&size=256`;
+            };
+
+            // Datos del Suplente
+            const nameSuplente = document.getElementById('modal-nombre-suplente');
+            const imgSuplente = document.getElementById('modal-foto-suplente');
+            
+            if (data.suplente && data.suplente.toLowerCase() !== 'no registrado' && data.suplente.toLowerCase() !== 'n/a') {
+                nameSuplente.textContent = data.suplente;
+                nameSuplente.classList.remove('italic', 'text-gray-400');
+                nameSuplente.classList.add('text-gray-700');
+                imgSuplente.src = data.fotoSuplente ? data.fotoSuplente : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.suplente)}&background=f8fafc&color=94a3b8&size=256`;
+                imgSuplente.onerror = function() {
+                    this.onerror = null;
+                    this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.suplente)}&background=f8fafc&color=94a3b8&size=256`;
+                };
+            } else {
+                nameSuplente.textContent = 'Sin suplente registrado';
+                nameSuplente.classList.add('italic', 'text-gray-400');
+                nameSuplente.classList.remove('text-gray-700');
+                imgSuplente.src = `https://ui-avatars.com/api/?name=Sin+Suplente&background=f8fafc&color=94a3b8&size=256`;
+            }
+
+            // Datos Adicionales
+            document.getElementById('modal-circunscripcion').textContent = data.circunscripcion || 'N/A';
+            document.getElementById('modal-comision').textContent = data.comision || 'Sin asignar';
+
+            // Mostrar Modal con animación
+            modalEl.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Evitar scroll en el fondo
+        }
+
+        function closeLegislatorModal() {
+            modalEl.classList.remove('show');
+            document.body.style.overflow = 'auto'; // Restaurar scroll
+        }
+
+        // Cerrar modal haciendo clic fuera de la caja de contenido
+        modalEl.addEventListener('click', function(e) {
+            if (e.target === modalEl) {
+                closeLegislatorModal();
+            }
+        });
+
+        // Cerrar modal presionando la tecla Esc
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalEl.classList.contains('show')) {
+                closeLegislatorModal();
+            }
+        });
 
         window.onload = () => {
             updateSortIcons();
