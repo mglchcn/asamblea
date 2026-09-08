@@ -112,7 +112,7 @@
             { partido: "BIA-YUQUI", diputados: 1, senadores: 0, color: "#33cc33", order: 1 }
         ];
 
-        let asambleaData = [];
+        let legisladoresData = [];
         let currentChamber = 'diputados'; // 'diputados' o 'senadores'
 
         // DOM Elements
@@ -125,32 +125,100 @@
         const elMajorityAbs = document.getElementById("majority-absolute");
         const elMajorityTwoThirds = document.getElementById("majority-twothirds");
 
+        function generateFallbackLegislators() {
+            let list = [];
+            fallbackData.forEach(party => {
+                for(let i=0; i<party.diputados; i++) {
+                    list.push({ 
+                        titular: `Dip. Titular ${party.partido} #${i+1}`, 
+                        suplente: `Dip. Suplente ${party.partido} #${i+1}`,
+                        partido: party.partido, 
+                        camara: "diputados", 
+                        departamento: "La Paz",
+                        circunscripcion: `C-${10+i}`, 
+                        color: party.color, 
+                        order: party.order 
+                    });
+                }
+                for(let i=0; i<party.senadores; i++) {
+                    list.push({ 
+                        titular: `Sen. Titular ${party.partido} #${i+1}`, 
+                        suplente: `Sen. Suplente ${party.partido} #${i+1}`,
+                        partido: party.partido, 
+                        camara: "senadores", 
+                        departamento: "Santa Cruz",
+                        circunscripcion: "Lista Departamental", 
+                        color: party.color, 
+                        order: party.order 
+                    });
+                }
+            });
+            return list;
+        }
+
         function loadData() {
             // Utilizamos el endpoint de Google Visualization (gviz) que tiene soporte oficial para CORS (Cross-Origin)
             const sheetId = '1Ibepk-mNDpz10F8iAtxuqLxjR0Y1rE_LbkT3bPQBsz8';
             const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
             
-            // PapaParse puede descargar directamente la URL
             Papa.parse(sheetUrl, {
                 download: true,
                 header: true,
                 dynamicTyping: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    // Verificación de seguridad por si Google devuelve una página HTML de error/login
                     if (results.data.length > 0 && Object.keys(results.data[0])[0] && Object.keys(results.data[0])[0].includes("<!DOCTYPE html>")) {
                         showError("La hoja es privada o requiere inicio de sesión.");
                         return;
                     }
                     
                     try {
-                        asambleaData = results.data.map((row, index) => ({
-                            partido: row.Partido || row.partido || fallbackData[index % fallbackData.length].partido,
-                            diputados: parseInt(row.Diputados || row.diputados || 0),
-                            senadores: parseInt(row.Senadores || row.senadores || 0),
-                            color: row.Color || row.color || fallbackData[index % fallbackData.length].color,
-                            order: parseInt(row.Orden || row.order || fallbackData[index % fallbackData.length].order || index)
-                        }));
+                        const firstRow = results.data[0] || {};
+                        // Detectamos si la hoja tiene el formato detallado buscando columnas clave
+                        const isDetailed = ('Titular' in firstRow || 'Nombre' in firstRow || 'nombre' in firstRow || 'Legislador' in firstRow);
+                        
+                        legisladoresData = [];
+                        
+                        if (isDetailed) {
+                            results.data.forEach(row => {
+                                const titular = row.Titular || row.Nombre || row.nombre || row.Legislador;
+                                if (titular) {
+                                    legisladoresData.push({
+                                        titular: titular,
+                                        suplente: row.Suplente || row.suplente || "No registrado",
+                                        partido: row.Partido || row.partido || "Independiente",
+                                        camara: String(row.Camara || row.camara || "Diputados").toLowerCase().trim(),
+                                        departamento: row.Departamento || row.departamento || row.Region || "No especificado",
+                                        circunscripcion: row.Circunscripcion || row.circunscripcion || row.Posicion || row.posicion || "N/A",
+                                        color: row.Color || row.color || fallbackData.find(f => f.partido === (row.Partido || row.partido))?.color || "#cccccc",
+                                        order: parseInt(row.Orden || row.order || fallbackData.find(f => f.partido === (row.Partido || row.partido))?.order || 99)
+                                    });
+                                }
+                            });
+                        } else {
+                            // Si sigue usando el formato agrupado antiguo, generamos nombres genéricos
+                            results.data.forEach((row, index) => {
+                                let partido = row.Partido || row.partido || fallbackData[index % fallbackData.length].partido;
+                                let color = row.Color || row.color || fallbackData[index % fallbackData.length].color;
+                                let order = parseInt(row.Orden || row.order || fallbackData[index % fallbackData.length].order || index);
+                                
+                                let dipCount = parseInt(row.Diputados || row.diputados || 0);
+                                for(let i=0; i<dipCount; i++) {
+                                    legisladoresData.push({ 
+                                        titular: `Titular ${partido} #${i+1}`, suplente: `Suplente ${partido} #${i+1}`, 
+                                        partido, camara: "diputados", departamento: "Pendiente", circunscripcion: "N/A", color, order 
+                                    });
+                                }
+                                
+                                let senCount = parseInt(row.Senadores || row.senadores || 0);
+                                for(let i=0; i<senCount; i++) {
+                                    legisladoresData.push({ 
+                                        titular: `Titular ${partido} #${i+1}`, suplente: `Suplente ${partido} #${i+1}`, 
+                                        partido, camara: "senadores", departamento: "Pendiente", circunscripcion: "N/A", color, order 
+                                    });
+                                }
+                            });
+                        }
                         
                         alertBox.classList.add('hidden');
                         updateDashboard();
@@ -166,7 +234,7 @@
 
         function showError(errorMsg) {
             console.warn("No se pudo cargar Google Sheets. Usando respaldo.", errorMsg);
-            asambleaData = fallbackData;
+            legisladoresData = generateFallbackLegislators();
             
             const alertText = document.getElementById('data-alert-text');
             if(alertText) alertText.textContent = "No se pudo leer la hoja en vivo. Verifique que los permisos estén en 'Cualquier usuario con el enlace' o revise su conexión. Usando datos de respaldo.";
@@ -198,16 +266,33 @@
         });
 
         function updateDashboard() {
-            // Filtrar escaños mayores a 0 para la cámara actual
-            const activeData = asambleaData.filter(d => d[currentChamber] > 0);
+            // Filtrar legisladores para la cámara actual (busca 'dip' o 'sen' para ser flexible)
+            const activeLegisladores = legisladoresData.filter(d => d.camara.includes(currentChamber.substring(0, 3)));
 
-            // Datos para el gráfico ordenados por espectro (de izquierda a derecha según imagen)
-            const chartData = [...activeData].sort((a, b) => a.order - b.order);
+            // Agrupar los legisladores por partido
+            let partyMap = new Map();
+            activeLegisladores.forEach(leg => {
+                if (!partyMap.has(leg.partido)) {
+                    partyMap.set(leg.partido, { 
+                        partido: leg.partido, 
+                        count: 0, 
+                        color: leg.color, 
+                        order: leg.order,
+                        miembros: []
+                    });
+                }
+                partyMap.get(leg.partido).count++;
+                partyMap.get(leg.partido).miembros.push(leg);
+            });
+
+            const partyGroups = Array.from(partyMap.values());
+            const totalSeats = activeLegisladores.length;
+
+            // Datos para el gráfico ordenados por espectro
+            const chartData = [...partyGroups].sort((a, b) => a.order - b.order);
             
-            // Datos para la leyenda ordenados por cantidad (descendente)
-            const legendData = [...activeData].sort((a, b) => b[currentChamber] - a[currentChamber]);
-
-            const totalSeats = legendData.reduce((sum, d) => sum + d[currentChamber], 0);
+            // Datos para la leyenda ordenados por cantidad
+            const legendData = [...partyGroups].sort((a, b) => b.count - a.count);
 
             // Actualizar tarjetas de información
             elMajorityAbs.textContent = Math.floor(totalSeats / 2) + 1 + " escaños";
@@ -307,16 +392,21 @@
             const mappedPoints = [];
             
             data.forEach(party => {
-                for (let i = 0; i < party[currentChamber]; i++) {
+                party.miembros.forEach(miembro => {
                     if (seatIndex < points.length) {
                         mappedPoints.push({
                             ...points[seatIndex],
-                            partido: party.partido,
-                            color: party.color
+                            partido: miembro.partido,
+                            color: miembro.color,
+                            titular: miembro.titular,
+                            suplente: miembro.suplente,
+                            camara: miembro.camara,
+                            departamento: miembro.departamento,
+                            circunscripcion: miembro.circunscripcion
                         });
                         seatIndex++;
                     }
-                }
+                });
             });
 
             // Dibujar los puntos (círculos)
@@ -338,10 +428,41 @@
                         
                     tooltip.transition().duration(200).style("opacity", 1);
                     tooltip.html(`
-                        <div style="color: ${d.color}; font-size: 14px;">${d.partido}</div>
+                        <div class="text-left p-2 w-64 md:w-72">
+                            <!-- Encabezado: Partido y Cámara -->
+                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                                <span class="text-xs font-extrabold uppercase tracking-widest" style="color: ${d.color};">${d.partido}</span>
+                                <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase tracking-wider">${d.camara}</span>
+                            </div>
+                            
+                            <!-- Titular -->
+                            <div class="mb-2">
+                                <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5 tracking-wider">Nombre del Titular</div>
+                                <div class="font-bold text-gray-800 text-sm leading-tight">${d.titular}</div>
+                            </div>
+                            
+                            <!-- Suplente -->
+                            <div class="mb-3">
+                                <div class="text-[9px] text-gray-400 uppercase font-bold mb-0.5 tracking-wider">Nombre del Suplente</div>
+                                <div class="font-semibold text-gray-600 text-xs leading-tight">${d.suplente}</div>
+                            </div>
+
+                            <!-- Datos de Ubicación -->
+                            <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 rounded-lg p-2 border border-gray-100">
+                                <div>
+                                    <span class="block text-[9px] text-gray-400 uppercase font-bold mb-1 tracking-wider">Departamento</span>
+                                    <span class="font-bold text-gray-700 truncate block" title="${d.departamento}">${d.departamento}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-[9px] text-gray-400 uppercase font-bold mb-1 tracking-wider">Circ. / Posición</span>
+                                    <span class="font-bold text-gray-700 truncate block" title="${d.circunscripcion}">${d.circunscripcion}</span>
+                                </div>
+                            </div>
+                        </div>
                     `)
-                    .style("left", (event.pageX + 10) + "px")
-                    .style("top", (event.pageY - 28) + "px");
+                    .style("left", (event.pageX + 15) + "px")
+                    // Ajuste para evitar que el tooltip se salga de la pantalla hacia abajo
+                    .style("top", (event.pageY - 80) + "px"); 
                 })
                 .on("mouseout", function(event, d) {
                     d3.select(this)
@@ -371,7 +492,7 @@
             legendContainer.innerHTML = '';
             
             data.forEach((party, index) => {
-                const count = party[currentChamber];
+                const count = party.count;
                 const label = currentChamber.charAt(0).toUpperCase() + currentChamber.slice(1);
                 
                 // Retraso para efecto en cascada de la leyenda
