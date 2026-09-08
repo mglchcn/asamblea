@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Asamblea Legislativa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #eff3f7; /* Color de fondo similar a la imagen */
+            color: #1e293b;
+        }
+        
+        .chamber-btn.active {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* Tooltip style para el gráfico */
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 8px 12px;
+            font-size: 12px;
+            background: white;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: opacity 0.2s;
+            z-index: 50;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div class="max-w-5xl w-full">
+        <!-- Encabezado y Controles -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Composición de la Asamblea</h1>
+                <p class="text-gray-500 mt-1">Distribución de escaños por fuerza política</p>
+            </div>
+            
+            <div class="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+                <button id="btn-diputados" class="chamber-btn active px-6 py-2 rounded-md text-sm font-semibold transition-colors border border-transparent">
+                    Diputados
+                </button>
+                <button id="btn-senadores" class="chamber-btn px-6 py-2 rounded-md text-sm font-semibold text-gray-600 transition-colors border border-transparent hover:bg-gray-50">
+                    Senadores
+                </button>
+            </div>
+        </div>
+
+        <!-- Alerta de Datos (Si no encuentra el CSV) -->
+        <div id="data-alert" class="hidden mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4 text-sm flex items-center shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span id="data-alert-text">Cargando datos...</span>
+        </div>
+
+        <!-- Contenedor Principal del Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            
+            <!-- Contenedor del Gráfico D3 (Izquierda) -->
+            <div class="lg:col-span-3 bg-transparent flex flex-col items-center justify-center relative min-h-[400px]">
+                <div id="chart" class="w-full flex justify-center"></div>
+                <div id="tooltip" class="tooltip"></div>
+            </div>
+
+            <!-- Contenedor de la Leyenda (Derecha) -->
+            <div class="lg:col-span-2 flex flex-col justify-center">
+                <div id="legend" class="space-y-4">
+                    <!-- Los elementos de la leyenda se insertarán dinámicamente aquí -->
+                </div>
+                
+                <!-- Tarjeta de información adicional -->
+                <div class="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Información Adicional</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                            <span class="text-gray-600 font-medium text-sm">Mayoría Absoluta</span>
+                            <span id="majority-absolute" class="font-bold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                            <span class="text-gray-600 font-medium text-sm">Mayoría 2/3</span>
+                            <span id="majority-twothirds" class="font-bold text-gray-800"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // Datos de respaldo basados en la imagen (En caso de que ALP.csv falle)
+        const fallbackData = [
+            { partido: "PDC", diputados: 49, senadores: 13, color: "#166560", order: 4 },
+            { partido: "LIBRE", diputados: 39, senadores: 11, color: "#ff0000", order: 7 },
+            { partido: "UNIDAD", diputados: 26, senadores: 8, color: "#ffb300", order: 5 },
+            { partido: "AP", diputados: 8, senadores: 2, color: "#0073a8", order: 3 },
+            { partido: "APB SUMATE", diputados: 5, senadores: 2, color: "#660066", order: 6 },
+            { partido: "MAS-IPSP", diputados: 2, senadores: 0, color: "#000099", order: 2 },
+            { partido: "BIA-YUQUI", diputados: 1, senadores: 0, color: "#33cc33", order: 1 }
+        ];
+
+        let asambleaData = [];
+        let currentChamber = 'diputados'; // 'diputados' o 'senadores'
+
+        // DOM Elements
+        const tooltip = d3.select("#tooltip");
+        const chartContainer = document.getElementById("chart");
+        const legendContainer = document.getElementById("legend");
+        const btnDiputados = document.getElementById("btn-diputados");
+        const btnSenadores = document.getElementById("btn-senadores");
+        const alertBox = document.getElementById("data-alert");
+        const elMajorityAbs = document.getElementById("majority-absolute");
+        const elMajorityTwoThirds = document.getElementById("majority-twothirds");
+
+        function loadData() {
+            // Utilizamos el endpoint de Google Visualization (gviz) que tiene soporte oficial para CORS (Cross-Origin)
+            const sheetId = '1Ibepk-mNDpz10F8iAtxuqLxjR0Y1rE_LbkT3bPQBsz8';
+            const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+            
+            // PapaParse puede descargar directamente la URL
+            Papa.parse(sheetUrl, {
+                download: true,
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    // Verificación de seguridad por si Google devuelve una página HTML de error/login
+                    if (results.data.length > 0 && Object.keys(results.data[0])[0] && Object.keys(results.data[0])[0].includes("<!DOCTYPE html>")) {
+                        showError("La hoja es privada o requiere inicio de sesión.");
+                        return;
+                    }
+                    
+                    try {
+                        asambleaData = results.data.map((row, index) => ({
+                            partido: row.Partido || row.partido || fallbackData[index % fallbackData.length].partido,
+                            diputados: parseInt(row.Diputados || row.diputados || 0),
+                            senadores: parseInt(row.Senadores || row.senadores || 0),
+                            color: row.Color || row.color || fallbackData[index % fallbackData.length].color,
+                            order: parseInt(row.Orden || row.order || fallbackData[index % fallbackData.length].order || index)
+                        }));
+                        
+                        alertBox.classList.add('hidden');
+                        updateDashboard();
+                    } catch (e) {
+                        showError("Error al procesar las columnas.");
+                    }
+                },
+                error: function(error) {
+                    showError(error);
+                }
+            });
+        }
+
+        function showError(errorMsg) {
+            console.warn("No se pudo cargar Google Sheets. Usando respaldo.", errorMsg);
+            asambleaData = fallbackData;
+            
+            const alertText = document.getElementById('data-alert-text');
+            if(alertText) alertText.textContent = "No se pudo leer la hoja en vivo. Verifique que los permisos estén en 'Cualquier usuario con el enlace' o revise su conexión. Usando datos de respaldo.";
+            
+            alertBox.classList.remove('hidden');
+            updateDashboard();
+        }
+
+        btnDiputados.addEventListener('click', () => {
+            currentChamber = 'diputados';
+            btnDiputados.classList.add('active', 'bg-blue-600', 'text-white');
+            btnDiputados.classList.remove('text-gray-600', 'hover:bg-gray-50');
+            
+            btnSenadores.classList.remove('active', 'bg-blue-600', 'text-white');
+            btnSenadores.classList.add('text-gray-600', 'hover:bg-gray-50');
+            
+            updateDashboard();
+        });
+
+        btnSenadores.addEventListener('click', () => {
+            currentChamber = 'senadores';
+            btnSenadores.classList.add('active', 'bg-blue-600', 'text-white');
+            btnSenadores.classList.remove('text-gray-600', 'hover:bg-gray-50');
+            
+            btnDiputados.classList.remove('active', 'bg-blue-600', 'text-white');
+            btnDiputados.classList.add('text-gray-600', 'hover:bg-gray-50');
+            
+            updateDashboard();
+        });
+
+        function updateDashboard() {
+            // Filtrar escaños mayores a 0 para la cámara actual
+            const activeData = asambleaData.filter(d => d[currentChamber] > 0);
+
+            // Datos para el gráfico ordenados por espectro (de izquierda a derecha según imagen)
+            const chartData = [...activeData].sort((a, b) => a.order - b.order);
+            
+            // Datos para la leyenda ordenados por cantidad (descendente)
+            const legendData = [...activeData].sort((a, b) => b[currentChamber] - a[currentChamber]);
+
+            const totalSeats = legendData.reduce((sum, d) => sum + d[currentChamber], 0);
+
+            // Actualizar tarjetas de información
+            elMajorityAbs.textContent = Math.floor(totalSeats / 2) + 1 + " escaños";
+            elMajorityTwoThirds.textContent = Math.ceil(totalSeats * (2/3)) + " escaños";
+
+            drawParliamentChart(chartData, totalSeats);
+            drawLegend(legendData);
+        }
+
+        function getParliamentPoints(totalSeats, numRows, innerRadius, outerRadius) {
+            let points = [];
+            let rowCounts = [];
+            
+            // Layout exacto para 130 escaños simulando el diseño original en 4 filas
+            if (totalSeats === 130) {
+                rowCounts = [21, 29, 37, 43];
+                numRows = 4;
+            } else if (totalSeats === 36) { // Layout simplificado para senadores
+                rowCounts = [15, 21];
+                numRows = 2;
+            } else {
+                // Cálculo dinámico proporcional si los datos cambian a otro número
+                let rowRadii = [];
+                for (let i = 0; i < numRows; i++) {
+                    rowRadii.push(innerRadius + (outerRadius - innerRadius) * (i / Math.max(1, (numRows - 1))));
+                }
+                let totalArcLength = rowRadii.reduce((sum, r) => sum + r * Math.PI, 0);
+                rowCounts = rowRadii.map(r => Math.round(totalSeats * ((r * Math.PI) / totalArcLength)));
+                
+                // Ajustar errores de redondeo para asegurar que sume el total exacto
+                let currentTotal = rowCounts.reduce((a, b) => a + b, 0);
+                let diff = totalSeats - currentTotal;
+                
+                if (diff !== 0) {
+                    let i = numRows - 1; // Comenzar ajustando desde la fila exterior
+                    while (diff !== 0) {
+                        let adjust = diff > 0 ? 1 : -1;
+                        rowCounts[i] += adjust;
+                        diff -= adjust;
+                        i = (i - 1 + numRows) % numRows;
+                    }
+                }
+            }
+
+            let rowRadii = [];
+            for (let i = 0; i < numRows; i++) {
+                rowRadii.push(innerRadius + (outerRadius - innerRadius) * (i / Math.max(1, (numRows - 1))));
+            }
+
+            for (let i = 0; i < numRows; i++) {
+                let r = rowRadii[i];
+                let seats = rowCounts[i];
+                for (let j = 0; j < seats; j++) {
+                    // Distribución de ángulos de Pi a 0 para llenar de izquierda a derecha
+                    let theta = seats > 1 ? Math.PI - (j / (seats - 1)) * Math.PI : Math.PI / 2;
+                    points.push({
+                        x: Math.cos(theta) * r,
+                        y: -Math.sin(theta) * r,
+                        angle: theta,
+                        r: r,
+                        row: i
+                    });
+                }
+            }
+            
+            // Ordenar de izquierda a derecha y evitar cruces entre filas
+            points.sort((a, b) => (b.angle - a.angle) || (a.r - b.r));
+            return points;
+        }
+
+        function drawParliamentChart(data, totalSeats) {
+            d3.select("#chart").selectAll("*").remove();
+
+            const width = 500;
+            const height = 300;
+            
+            // Determinar dimensiones basado en la cámara
+            const numRows = totalSeats > 100 ? 5 : 3; 
+            const innerRadius = totalSeats > 100 ? 100 : 120;
+            const outerRadius = 240;
+            const dotRadius = totalSeats > 100 ? 7 : 10;
+
+            const svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("preserveAspectRatio", "xMidYMid meet")
+                .append("g")
+                .attr("transform", `translate(${width / 2}, ${height - 20})`); // Mover al centro inferior
+
+            // Generar los puntos para el hemiciclo
+            const points = getParliamentPoints(totalSeats, numRows, innerRadius, outerRadius);
+
+            // Asignar partido a cada punto basado en los datos
+            let seatIndex = 0;
+            const mappedPoints = [];
+            
+            data.forEach(party => {
+                for (let i = 0; i < party[currentChamber]; i++) {
+                    if (seatIndex < points.length) {
+                        mappedPoints.push({
+                            ...points[seatIndex],
+                            partido: party.partido,
+                            color: party.color
+                        });
+                        seatIndex++;
+                    }
+                }
+            });
+
+            // Dibujar los puntos (círculos)
+            svg.selectAll("circle")
+                .data(mappedPoints)
+                .enter()
+                .append("circle")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", 0) // Inicial para animación
+                .attr("fill", d => d.color)
+                .style("cursor", "pointer")
+                .on("mouseover", function(event, d) {
+                    d3.select(this)
+                        .transition().duration(200)
+                        .attr("r", dotRadius + 3)
+                        .attr("stroke", "#333")
+                        .attr("stroke-width", 2);
+                        
+                    tooltip.transition().duration(200).style("opacity", 1);
+                    tooltip.html(`
+                        <div style="color: ${d.color}; font-size: 14px;">${d.partido}</div>
+                    `)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(event, d) {
+                    d3.select(this)
+                        .transition().duration(200)
+                        .attr("r", dotRadius)
+                        .attr("stroke", "none");
+                    tooltip.transition().duration(500).style("opacity", 0);
+                })
+                .transition() // Animación de entrada
+                .delay((d, i) => i * (1000 / totalSeats))
+                .duration(500)
+                .attr("r", dotRadius);
+
+            // Texto central (Total)
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("x", 0)
+                .attr("y", -20) // Ajustado para estar sobre el centro
+                .text(totalSeats)
+                .style("font-size", "56px")
+                .style("font-weight", "800")
+                .style("font-family", "Inter")
+                .style("fill", "#000");
+        }
+
+        function drawLegend(data) {
+            legendContainer.innerHTML = '';
+            
+            data.forEach((party, index) => {
+                const count = party[currentChamber];
+                const label = currentChamber.charAt(0).toUpperCase() + currentChamber.slice(1);
+                
+                // Retraso para efecto en cascada de la leyenda
+                const animDelay = index * 0.1;
+
+                const itemHTML = `
+                    <div class="flex items-center group transition-transform hover:translate-x-2" style="animation: slideIn 0.5s ease forwards ${animDelay}s; opacity: 0; transform: translateX(-20px);">
+                        
+                        <!-- Círculo de color con icono de check -->
+                        <div class="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center shadow-sm" 
+                             style="background-color: ${party.color};">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        
+                        <!-- Textos -->
+                        <div class="ml-4">
+                            <div class="font-bold text-[#1a365d] text-lg tracking-wide leading-tight uppercase">${party.partido}</div>
+                            <div class="text-gray-600 text-sm font-medium">${count} ${label}</div>
+                        </div>
+                    </div>
+                `;
+                legendContainer.insertAdjacentHTML('beforeend', itemHTML);
+            });
+        }
+
+        // Agregar animación CSS inyectada para la leyenda
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes slideIn {
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Inicializar
+        window.onload = loadData;
+
+    </script>
+</body>
+</html>
