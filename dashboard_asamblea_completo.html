@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Asamblea Legislativa</title>
+    <title>Dashboard Integral - Asamblea Legislativa</title>
+    <!-- Tailwind CSS para estilos -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js para el gráfico del Hemiciclo -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- PapaParse para leer Google Sheets -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- Fuentes de Google -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -16,318 +20,344 @@
             color: #0f172a;
         }
         
-        /* Botones de Cámara */
-        .chamber-btn.active {
-            background-color: #2563eb;
-            color: white;
-            border-color: #2563eb;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-        }
-
-        /* Pestañas de Vista */
-        .view-tab {
-            border-bottom: 2px solid transparent;
-        }
-        .view-tab.active {
-            border-bottom: 2px solid #2563eb;
+        .main-tab.active {
+            border-bottom: 3px solid #2563eb;
             color: #2563eb;
-            font-weight: 600;
+            font-weight: 700;
         }
 
-        /* Tooltip D3 */
+        .chamber-btn.active {
+            background-color: #1e293b;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
         .tooltip {
             position: absolute;
-            text-align: left;
             background: white;
             border-radius: 12px;
             pointer-events: none;
             opacity: 0;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            transition: opacity 0.2s ease-in-out;
-            z-index: 50;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+            transition: opacity 0.15s ease-in-out;
+            z-index: 100;
             border: 1px solid #e2e8f0;
+            width: max-content;
+            max-width: 320px;
         }
-
-        /* Utilidades del Modal */
-        #legislator-modal {
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-        #legislator-modal.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        #legislator-modal .modal-content {
-            transform: scale(0.95);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        #legislator-modal.show .modal-content {
-            transform: scale(1);
-        }
-
-        /* Utilidades de Animación */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideIn {
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Ordenamiento de tabla */
-        th.sortable { cursor: pointer; transition: background-color 0.1s; }
-        th.sortable:hover { background-color: #f1f5f9; }
-        .sort-icon::after { content: '↕'; margin-left: 4px; opacity: 0.3; }
-        .sort-asc::after { content: '↑'; opacity: 1; color: #2563eb; }
-        .sort-desc::after { content: '↓'; opacity: 1; color: #2563eb; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        
+        .animate-fade { animation: fadeIn 0.3s ease forwards; }
+        .animate-slide { animation: slideUp 0.4s ease forwards; }
+        .modal-enter { animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center">
+<body class="min-h-screen flex flex-col items-center pb-12">
 
-    <div class="max-w-7xl w-full">
-        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-6">
-            <div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Asamblea Legislativa</h1>
-                <p class="text-gray-500 mt-1 font-medium">Distribución de escaños y directorio de autoridades</p>
+    <div class="w-full bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="pt-6 pb-2">
+                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Asamblea Legislativa Plurinacional</h1>
+                <p class="text-slate-500 mt-1 text-sm font-medium">Panel de Control y Composición Política</p>
             </div>
             
-            <!-- Selector de Vistas (Gráfico vs Tabla) -->
-            <div class="flex space-x-6 border-b border-gray-300 w-full xl:w-auto">
-                <button id="tab-grafico" class="view-tab active pb-2 px-1 text-gray-500 hover:text-gray-700 transition-colors">
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
-                        Vista Gráfica
-                    </div>
-                </button>
-                <button id="tab-tabla" class="view-tab pb-2 px-1 text-gray-500 hover:text-gray-700 transition-colors">
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                        Tabla Dinámica
-                    </div>
-                </button>
-            </div>
-        </div>
-
-        <div class="mb-6 flex overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-            <div class="flex bg-white rounded-xl p-1.5 border border-gray-200 shadow-sm w-max">
-                <button id="btn-diputados" data-camera="diputados" class="chamber-btn active px-6 py-2.5 rounded-lg text-sm font-bold transition-all border border-transparent whitespace-nowrap">
-                    Diputados (130)
-                </button>
-                <button id="btn-senadores" data-camera="senadores" class="chamber-btn px-6 py-2.5 rounded-lg text-sm font-bold text-gray-600 transition-all border border-transparent hover:bg-gray-50 whitespace-nowrap">
-                    Senadores (36)
-                </button>
-                <button id="btn-supraestatales" data-camera="supraestatales" class="chamber-btn px-6 py-2.5 rounded-lg text-sm font-bold text-gray-600 transition-all border border-transparent hover:bg-gray-50 whitespace-nowrap">
-                    Supraestatales (9)
-                </button>
-                <button id="btn-comisiones" data-camera="comisiones" class="chamber-btn px-6 py-2.5 rounded-lg text-sm font-bold text-gray-600 transition-all border border-transparent hover:bg-gray-50 whitespace-nowrap">
-                    Comisiones
-                </button>
-                <button id="btn-bancada" data-camera="bancada" class="chamber-btn px-6 py-2.5 rounded-lg text-sm font-bold text-gray-600 transition-all border border-transparent hover:bg-gray-50 whitespace-nowrap">
-                    Jefes de Bancada
-                </button>
-            </div>
-        </div>
-
-        <!-- Alerta de Datos -->
-        <div id="data-alert" class="hidden mb-6 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg p-4 text-sm flex items-start shadow-sm fade-in">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-            <span id="data-alert-text">Cargando datos en vivo...</span>
-        </div>
-
-        <div id="view-chart" class="fade-in block">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Contenedor del Gráfico D3 (Izquierda) -->
-                <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center relative min-h-[450px]">
-                    <div id="chart" class="w-full h-full flex justify-center items-center"></div>
-                    <div id="tooltip" class="tooltip"></div>
-                </div>
-
-                <!-- Contenedor de la Leyenda e Info (Derecha) -->
-                <div class="lg:col-span-4 flex flex-col gap-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex-grow">
-                        <h3 class="text-sm font-extrabold text-gray-400 uppercase tracking-wider mb-5">Clasificación Actual</h3>
-                        <div id="legend" class="space-y-4">
-                            <!-- Inserción dinámica -->
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                        <h3 class="text-sm font-extrabold text-gray-400 uppercase tracking-wider mb-4">Información de Mayorías</h3>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                <span class="text-gray-600 font-semibold text-sm">Mayoría Absoluta</span>
-                                <span id="majority-absolute" class="font-extrabold text-blue-700 text-lg"></span>
-                            </div>
-                            <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                <span class="text-gray-600 font-semibold text-sm">Mayoría 2/3</span>
-                                <span id="majority-twothirds" class="font-extrabold text-blue-700 text-lg"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-table" class="hidden fade-in bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-            
-            <!-- Controles de la Tabla -->
-            <div class="p-5 border-b border-gray-200 bg-gray-50 space-y-4">
-                
-                <!-- Fila 1: Búsqueda y Título -->
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h2 class="text-lg font-extrabold text-gray-800 flex items-center min-w-max">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M9 2a7 7 0 100 14A7 7 0 009 2zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" />
-                        </svg>
-                        Directorio Legislativo
-                    </h2>
-                    <div class="relative w-full md:max-w-md">
-                        <input type="text" id="table-search" placeholder="Buscar por nombre, partido, comisión o región..." 
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow shadow-sm">
-                        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
-                </div>
-
-                <!-- Fila 2: Filtros y Agrupaciones -->
-                <div class="flex flex-wrap items-center justify-between gap-4">
-                    
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div class="flex items-center text-sm font-semibold text-gray-600">Filtrar:</div>
-                        <select id="filter-partido" class="border border-gray-300 rounded-md text-sm py-1.5 px-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none shadow-sm font-medium min-w-[140px]">
-                            <option value="">Todos los Partidos</option>
-                        </select>
-                        <select id="filter-departamento" class="border border-gray-300 rounded-md text-sm py-1.5 px-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none shadow-sm font-medium min-w-[140px]">
-                            <option value="">Todos los Deptos.</option>
-                        </select>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-3 bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
-                        <div class="flex items-center text-sm font-semibold text-gray-500 pl-2">Agrupar por:</div>
-                        <select id="group-select" class="border-none text-sm py-1.5 px-2 bg-transparent focus:ring-0 outline-none font-bold text-blue-700 cursor-pointer">
-                            <option value="">Sin agrupar</option>
-                            <option value="departamento">Departamento</option>
-                            <option value="partido">Partido</option>
-                            <option value="comision">Comisión</option>
-                            <option value="cargo">Cargo / Rol</option>
-                        </select>
-                        <span class="text-gray-300">|</span>
-                        <div class="flex items-center text-sm font-semibold text-gray-500">Sub-grupo:</div>
-                        <select id="cross-select" class="border-none text-sm py-1.5 px-2 bg-transparent focus:ring-0 outline-none font-bold text-blue-700 cursor-pointer" disabled>
-                            <option value="">Ninguno</option>
-                            <option value="partido">Partido</option>
-                            <option value="departamento">Departamento</option>
-                            <option value="comision">Comisión</option>
-                            <option value="cargo">Cargo / Rol</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contenedor de la Tabla HTML -->
-            <div class="overflow-x-auto max-h-[600px]">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-100 sticky top-0 z-10 shadow-sm border-b border-gray-200">
-                        <tr>
-                            <th class="p-3 text-xs font-extrabold text-gray-600 uppercase tracking-wider sortable sort-icon" data-sort="departamento">Departamento</th>
-                            <th class="p-3 text-xs font-extrabold text-gray-600 uppercase tracking-wider sortable sort-icon" data-sort="camara">Cámara</th>
-                            <th class="p-3 text-xs font-extrabold text-gray-600 uppercase tracking-wider sortable sort-icon" data-sort="circunscripcion">Circ. / Posición</th>
-                            <th class="p-3 text-xs font-extrabold text-gray-600 uppercase tracking-wider sortable sort-icon" data-sort="titular">Nombre Titular</th>
-                            <th class="p-3 text-xs font-extrabold text-gray-600 uppercase tracking-wider sortable sort-icon" data-sort="suplente">Nombre Suplente</th>
-                            <th class="p-3 text-xs font-extrabold text-gray-600 uppercase tracking-wider sortable sort-icon" data-sort="partido">Partido</th>
-                            <th class="p-3 text-xs font-extrabold text-gray-600 uppercase tracking-wider sortable sort-icon" data-sort="comision">Comisión</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body" class="divide-y divide-gray-100 text-sm">
-                        <!-- Filas dinámicas -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="p-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-                <span class="text-sm font-semibold text-gray-600">Total registros: <span id="table-count" class="text-blue-700 font-bold">0</span></span>
+            <div class="flex overflow-x-auto hide-scrollbar mt-4 border-b border-slate-100 gap-6">
+                <button onclick="switchMainTab('ejecutivo')" id="tab-btn-ejecutivo" class="main-tab active pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Dashboard Ejecutivo</button>
+                <button onclick="switchMainTab('hemiciclo')" id="tab-btn-hemiciclo" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vista Hemiciclo</button>
+                <button onclick="switchMainTab('directorio')" id="tab-btn-directorio" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Directorio (Tabla)</button>
+                <button onclick="switchMainTab('voceria')" id="tab-btn-voceria" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vocería y Prensa</button>
+                <button onclick="switchMainTab('intensidad')" id="tab-btn-intensidad" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Intensidad / Alineación</button>
+                <button onclick="switchMainTab('simulacion')" id="tab-btn-simulacion" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Simulador de Leyes</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Información Detallada del Legislador -->
-    <div id="legislator-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm opacity-0 invisible">
-        <div class="modal-content relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <!-- Cinta de color del partido (Dinámica) -->
-            <div id="modal-color-band" class="h-3 w-full bg-gray-300"></div>
-            
-            <!-- Botón de Cerrar -->
-            <button onclick="closeLegislatorModal()" class="absolute top-5 right-5 p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 rounded-full transition-colors focus:outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
+    <div class="max-w-7xl w-full px-4 sm:px-6 lg:px-8 mt-6">
+        <div id="data-alert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm flex items-center shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 flex-shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span id="data-alert-text" class="font-medium">Sincronizando base de datos central...</span>
+        </div>
+    </div>
 
-            <!-- Contenido Scrollable -->
-            <div class="p-6 md:p-8 overflow-y-auto custom-scrollbar">
+    <div class="max-w-7xl w-full px-4 sm:px-6 lg:px-8 mt-6 w-full">
+        
+        <div id="view-ejecutivo" class="view-section animate-fade block">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl font-black text-slate-800 mb-1" id="exec-total">166</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Total Asambleístas</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl font-black text-blue-600 mb-1" id="exec-diputados">130</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Cámara de Diputados</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl font-black text-emerald-600 mb-1" id="exec-senadores">36</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Cámara de Senadores</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800">Composición Detallada por Fuerza Política / Partido</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">Fuerza Política / Partido</th>
+                                <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 text-center">Diputados</th>
+                                <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 text-center">Senadores</th>
+                                <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 text-center">Supraestatales</th>
+                                <th class="p-4 text-xs font-black text-slate-800 uppercase tracking-wider border-b border-slate-200 bg-slate-100 text-center">Total Escaños</th>
+                                <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 w-1/3">Proporción Global</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exec-matrix-body" class="divide-y divide-slate-100">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-hemiciclo" class="view-section animate-fade hidden">
+            <div class="flex flex-wrap items-center gap-3 mb-6 bg-white p-2 rounded-xl shadow-sm border border-slate-200 inline-flex">
+                <button onclick="setChamber('diputados')" id="btn-diputados" class="chamber-btn active px-5 py-2.5 rounded-lg text-sm font-semibold transition-all">Diputados</button>
+                <button onclick="setChamber('senadores')" id="btn-senadores" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Senadores</button>
+                <button onclick="setChamber('supraestatales')" id="btn-supraestatales" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Supraestatales</button>
+                <div class="h-6 w-px bg-slate-200 mx-1"></div>
+                <button onclick="setChamber('jefes')" id="btn-jefes" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                    Jefes de Bancada
+                </button>
                 
-                <!-- Encabezado Modal: Badges -->
-                <div class="flex flex-wrap gap-2 mb-6">
-                    <span id="modal-badge-camara" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold uppercase tracking-wider border border-gray-200">Cámara</span>
-                    <span id="modal-badge-partido" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wider border border-blue-100">Partido</span>
-                    <span id="modal-badge-depto" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold uppercase tracking-wider border border-gray-200">Departamento</span>
+                <div class="ml-auto pl-2 flex items-center">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wide mr-2">Comisión:</label>
+                    <select id="comision-selector" onchange="applyComisionFilter()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-3 py-2 font-medium">
+                        <option value="todas">Todas las Comisiones</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 bg-transparent flex flex-col items-center justify-center relative min-h-[450px]">
+                    <div id="chart" class="w-full h-full flex justify-center"></div>
+                    <div id="tooltip" class="tooltip"></div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Columna Izquierda: Titular -->
-                    <div class="flex flex-col items-center text-center bg-gray-50 p-6 rounded-xl border border-gray-100">
-                        <div class="relative mb-4">
-                            <img id="modal-foto-titular" src="" alt="Titular" class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md bg-white">
-                            <div id="modal-icon-titular" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full border-2 border-white shadow-sm" title="Titular">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                <div class="lg:col-span-4 flex flex-col justify-start pt-4 space-y-6">
+                    <div class="bg-slate-800 rounded-2xl p-6 shadow-lg text-white">
+                        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Aprobación de Normas</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-600 pb-3">
+                                <div>
+                                    <div class="font-bold text-sm">Mayoría Absoluta</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Leyes ordinarias, resoluciones</div>
+                                </div>
+                                <div class="text-right">
+                                    <span id="majority-absolute" class="font-black text-2xl text-blue-400">66</span>
+                                    <span class="text-xs font-bold text-slate-400 ml-1">votos</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center pb-1">
+                                <div>
+                                    <div class="font-bold text-sm">Mayoría 2/3</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Leyes orgánicas, designaciones</div>
+                                </div>
+                                <div class="text-right">
+                                    <span id="majority-twothirds" class="font-black text-2xl text-amber-400">87</span>
+                                    <span class="text-xs font-bold text-slate-400 ml-1">votos</span>
+                                </div>
                             </div>
                         </div>
-                        <div id="modal-rol-titular" class="text-xs text-blue-600 uppercase font-black tracking-widest mb-1">Titular</div>
-                        <h3 id="modal-nombre-titular" class="text-xl font-extrabold text-gray-900 leading-tight mb-2">Nombre Titular</h3>
-                        <p id="modal-cargo-titular" class="text-sm font-medium text-gray-500">Cargo Específico</p>
                     </div>
 
-                    <!-- Columna Derecha: Suplente -->
-                    <div class="flex flex-col items-center text-center bg-gray-50 p-6 rounded-xl border border-gray-100 relative">
-                        <!-- Línea conectora visual para pantallas grandes -->
-                        <div class="hidden md:block absolute top-1/2 -left-4 w-8 border-t-2 border-dashed border-gray-300"></div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Fuerzas Políticas</h3>
+                        <div id="legend" class="space-y-3 max-h-[300px] overflow-y-auto pr-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-directorio" class="view-section animate-fade hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div class="w-full md:w-1/3 relative">
+                        <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="search-table" placeholder="Buscar legislador, comisión, cargo..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+                    </div>
+                    
+                    <div class="flex gap-3 w-full md:w-auto overflow-x-auto">
+                        <select id="filter-partido" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium">
+                            <option value="">Fuerza Política: Todas</option>
+                        </select>
+                        <select id="group-table" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium bg-slate-50">
+                            <option value="ninguno">Sin Agrupar</option>
+                            <option value="partido">Agrupar por Partido</option>
+                            <option value="departamento">Agrupar por Departamento</option>
+                            <option value="camara">Agrupar por Cámara</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider w-12">Foto</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onclick="sortTable('titular')">Nombre Titular ↕</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Suplente</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onclick="sortTable('partido')">Partido ↕</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100" onclick="sortTable('camara')">Cámara ↕</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Depto</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Circ / Pos</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Comisión</th>
+                                <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 bg-blue-50 text-blue-800" onclick="sortTable('alineacion')">Alineación ↕</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+                <div id="table-empty" class="hidden text-center py-10 text-slate-500 font-medium text-sm">No se encontraron asambleístas con esos criterios.</div>
+            </div>
+        </div>
+
+        <div id="view-voceria" class="view-section animate-fade hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Directorio de Voceros y Prensa</h2>
+                    <p class="text-sm text-slate-500 mt-1">Historial de declaraciones públicas y posturas políticas.</p>
+                </div>
+                <div class="w-full md:w-1/3 relative">
+                    <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" id="search-voceria" onkeyup="renderVoceria()" placeholder="Buscar temas, leyes o nombres..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+                </div>
+            </div>
+            
+            <div id="voceria-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            <div id="voceria-empty" class="hidden text-center py-12 text-slate-500 bg-white rounded-xl border border-slate-200 mt-4">
+                <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 2v4a2 2 0 002 2h4"></path></svg>
+                <p class="font-medium text-lg text-slate-600">No hay registros de prensa</p>
+                <p class="text-sm mt-1">Ajuste los filtros o la búsqueda.</p>
+            </div>
+        </div>
+
+        <div id="view-intensidad" class="view-section animate-fade hidden">
+            <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center mb-6">
+                <h2 class="text-2xl font-black text-slate-800 mb-2">Mapa de Lealtad y Alineación</h2>
+                <p class="text-slate-600 mb-6 max-w-2xl mx-auto text-sm">La transparencia de cada curul representa el nivel de alineación del legislador con la línea oficial de su partido (100% = Color Sólido, menor porcentaje = mayor transparencia). <strong>Haz clic en cualquier punto para abrir su perfil completo.</strong></p>
+                
+                <div class="w-full flex justify-center h-[400px] relative" id="chart-intensidad"></div>
+                <div class="mt-4 flex items-center justify-center space-x-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <span>Desviado (0%)</span>
+                    <div class="w-48 h-3 rounded-full bg-gradient-to-r from-slate-200 to-slate-800"></div>
+                    <span>Alineado (100%)</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-simulacion" class="view-section animate-fade hidden">
+             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">Simulador de Leyes</h3>
+                    
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Nombre del Proyecto de Ley</label>
+                    <input type="text" id="sim-ley-nombre" value="Ley del Presupuesto General" class="w-full mb-4 p-2 border border-slate-200 rounded-lg text-sm font-medium">
+                    
+                    <button onclick="runSmartSimulation()" class="w-full mb-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Simular Proyección por Alineación
+                    </button>
+
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">Instrucciones</h4>
+                        <p class="text-sm text-slate-600">Haz clic en los escaños del hemiciclo para cambiar su voto de manera individual, o use la proyección inteligente basada en su nivel de alineación partidaria.</p>
                         
-                        <div class="relative mb-4">
-                            <img id="modal-foto-suplente" src="" alt="Suplente" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md bg-white opacity-90">
-                            <div class="absolute bottom-0 right-0 bg-gray-400 text-white p-1.5 rounded-full border-2 border-white shadow-sm" title="Suplente">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
-                            </div>
+                        <div class="pt-4 border-t border-slate-100">
+                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Votación en Bloque por Partido</h4>
+                            <div id="sim-party-controls" class="space-y-2"></div>
                         </div>
-                        <div class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Legislador Suplente</div>
-                        <h3 id="modal-nombre-suplente" class="text-lg font-bold text-gray-700 leading-tight mb-2">Nombre Suplente</h3>
                     </div>
                 </div>
 
-                <!-- Detalles Adicionales -->
-                <div class="mt-8 border-t border-gray-100 pt-6">
-                    <h4 class="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-4">Información de la Asignación</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="bg-white border border-gray-200 rounded-lg p-3 flex items-start gap-3 shadow-sm">
-                            <div class="bg-blue-50 p-2 rounded-md text-blue-600 shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center space-x-6">
+                            <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-green-500 mr-2 shadow-sm"></div><span class="text-sm font-bold text-slate-700">A Favor (<span id="sim-count-favor">0</span>)</span></div>
+                            <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-red-500 mr-2 shadow-sm"></div><span class="text-sm font-bold text-slate-700">En Contra (<span id="sim-count-contra">0</span>)</span></div>
+                            <div class="flex items-center"><div class="w-4 h-4 rounded-full bg-slate-300 mr-2 shadow-sm"></div><span class="text-sm font-bold text-slate-700">Abstención (<span id="sim-count-abs">0</span>)</span></div>
+                        </div>
+                        <div id="sim-result-badge" class="px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider bg-slate-100 text-slate-500">Pendiente</div>
+                    </div>
+                    <div id="chart-simulacion" class="w-full h-[400px] flex justify-center"></div>
+                </div>
+             </div>
+        </div>
+
+    </div>
+
+    <div id="perfil-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div id="modal-header" class="px-6 py-4 flex justify-between items-center bg-slate-800 text-white">
+                <div class="flex items-center gap-3">
+                    <span id="modal-party-badge" class="px-3 py-1 rounded bg-white/20 text-xs font-black uppercase tracking-widest backdrop-blur-md">PARTIDO</span>
+                    <span id="modal-chamber-badge" class="text-sm font-semibold opacity-90">Cámara</span>
+                </div>
+                <button onclick="closeModal()" class="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 rounded-full p-1.5">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-6 md:p-8 overflow-y-auto bg-slate-50 flex-1">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex flex-col items-center md:items-start w-full md:w-1/3 shrink-0">
+                        <div id="modal-photo" class="w-32 h-40 md:w-full md:h-56 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-4 flex items-center justify-center p-1"></div>
+                        <div id="modal-role" class="w-full text-center md:text-left text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Cargo</div>
+                        <div class="w-full text-center md:text-left text-sm font-bold text-slate-700 mb-4"><span id="modal-comision">Sin Comisión</span></div>
+                    </div>
+
+                    <div class="flex-1 w-full">
+                        <h2 id="modal-name" class="text-2xl md:text-3xl font-black text-slate-800 leading-tight mb-1">Nombre Legislador</h2>
+                        <p class="text-slate-500 font-medium text-sm mb-6 flex items-center gap-2">
+                            Suplente: <span id="modal-suplente" class="text-slate-700 font-bold">Nombre Suplente</span>
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-3 mb-6">
+                            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                                <span class="block text-[10px] text-slate-400 uppercase font-bold mb-1 tracking-wider">Departamento</span>
+                                <span id="modal-depto" class="font-bold text-slate-700 text-sm">Depto</span>
                             </div>
-                            <div>
-                                <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Circunscripción / Posición</div>
-                                <div id="modal-circunscripcion" class="font-bold text-gray-800 text-sm mt-0.5">C-XX</div>
+                            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                                <span class="block text-[10px] text-slate-400 uppercase font-bold mb-1 tracking-wider">Circunscripción / Pos.</span>
+                                <span id="modal-circ" class="font-bold text-slate-700 text-sm">Circunscripción</span>
                             </div>
                         </div>
-                        <div class="bg-white border border-gray-200 rounded-lg p-3 flex items-start gap-3 shadow-sm">
-                            <div class="bg-orange-50 p-2 rounded-md text-orange-600 shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clip-rule="evenodd" /></svg>
+                        
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-black text-slate-500 uppercase tracking-wider">Nivel de Alineación Partidaria</span>
+                                <span id="modal-alineacion-txt" class="text-sm font-bold text-blue-600">100%</span>
                             </div>
-                            <div>
-                                <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Comisión Asignada</div>
-                                <div id="modal-comision" class="font-bold text-gray-800 text-sm mt-0.5">Nombre de Comisión</div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div id="modal-alineacion-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 100%"></div>
                             </div>
+                        </div>
+
+                        <div id="modal-prensa-container" class="hidden">
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-200 pb-2 mb-4">Historial de Vocería y Prensa</h3>
+                            <div id="modal-prensa-list" class="space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent"></div>
                         </div>
                     </div>
                 </div>
@@ -336,95 +366,92 @@
     </div>
 
     <script>
-        // Datos de respaldo predeterminados (Fallback)
+        const partyColors = {
+            "PDC": "#006167",
+            "LIBRE": "#ff0000",
+            "UNIDAD": "#ffb300",
+            "AP": "#0073a8",
+            "APB SUMATE": "#660066",
+            "MAS-IPSP": "#000099",
+            "MAS": "#000099",
+            "MAS IPCP": "#000099",
+            "BIA-YUQUI": "#22c55e",
+            "INDEPENDIENTE": "#94a3b8"
+        };
+
         const fallbackData = [
-            { partido: "MAS-IPSP", color: "#0052cc", order: 1, diputados: 73, senadores: 21, supra: 5 },
-            { partido: "CC", color: "#ff6600", order: 2, diputados: 39, senadores: 11, supra: 3 },
-            { partido: "CREEMOS", color: "#cc0066", order: 3, diputados: 16, senadores: 4, supra: 1 },
-            { partido: "INDEP", color: "#64748b", order: 4, diputados: 2, senadores: 0, supra: 0 }
+            { partido: "PDC", diputados: 49, senadores: 13, order: 4 },
+            { partido: "LIBRE", diputados: 39, senadores: 11, order: 7 },
+            { partido: "UNIDAD", diputados: 26, senadores: 8, order: 5 },
+            { partido: "AP", diputados: 8, senadores: 2, order: 3 },
+            { partido: "APB SUMATE", diputados: 5, senadores: 2, order: 6 },
+            { partido: "MAS-IPSP", diputados: 2, senadores: 0, order: 2 },
+            { partido: "BIA-YUQUI", diputados: 1, senadores: 0, order: 1 }
         ];
 
         let legisladoresData = [];
-        
-        // Estado del Dashboard
-        let currentView = 'chart'; // 'chart' | 'table'
-        let currentChamber = 'diputados'; // 'diputados' | 'senadores' | 'supraestatales'
-        
-        // Estado de la Tabla
-        let sortConfig = { key: 'departamento', direction: 'asc' };
-        let groupByState = '';
-        let crossByState = '';
-        let filtersState = { partido: '', departamento: '' };
+        let currentChamber = 'diputados'; 
+        let currentSort = { col: 'titular', asc: true };
+        let simulationState = {};
 
-        // DOM Elements Principales
-        const viewChart = document.getElementById("view-chart");
-        const viewTable = document.getElementById("view-table");
-        const tabGrafico = document.getElementById("tab-grafico");
-        const tabTabla = document.getElementById("tab-tabla");
-        const alertBox = document.getElementById("data-alert");
-        const alertText = document.getElementById("data-alert-text");
-        
-        // DOM Info Dashboard
-        const tooltip = d3.select("#tooltip");
-        const legendContainer = document.getElementById("legend");
-        const elMajorityAbs = document.getElementById("majority-absolute");
-        const elMajorityTwoThirds = document.getElementById("majority-twothirds");
-
-        // Elementos del Modal
-        const modalEl = document.getElementById("legislator-modal");
-
-        // Botones de cámara
-        const chamberBtns = document.querySelectorAll('.chamber-btn');
-
-        // Controles de Tabla
-        const tableBody = document.getElementById("table-body");
-        const searchInput = document.getElementById("table-search");
-        const tableCount = document.getElementById("table-count");
-        const filterPartido = document.getElementById("filter-partido");
-        const filterDepartamento = document.getElementById("filter-departamento");
-        const groupSelect = document.getElementById("group-select");
-        const crossSelect = document.getElementById("cross-select");
-        const sortHeaders = document.querySelectorAll('th.sortable');
-
-        function generateFallbackLegislators() {
-            let list = [];
-            const deptos = ["La Paz", "Santa Cruz", "Cochabamba", "Oruro", "Potosí", "Tarija", "Chuquisaca", "Beni", "Pando"];
-            
-            fallbackData.forEach(party => {
-                // Diputados
-                for(let i=0; i<party.diputados; i++) {
-                    list.push(createMockLeg(party, i, "diputados", deptos[i % deptos.length], `C-${10+i}`));
+        const getSafeCol = (row, possibleNames, defaultVal = "") => {
+            const rowKeys = Object.keys(row);
+            for (let name of possibleNames) {
+                const foundKey = rowKeys.find(k => k.trim().toLowerCase() === name.toLowerCase());
+                if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null && String(row[foundKey]).trim() !== "") {
+                    return String(row[foundKey]).trim();
                 }
-                // Senadores
-                for(let i=0; i<party.senadores; i++) {
-                    list.push(createMockLeg(party, i, "senadores", deptos[i % deptos.length], "Lista Dptal."));
-                }
-                // Supraestatales
-                for(let i=0; i<party.supra; i++) {
-                    list.push(createMockLeg(party, i, "supraestatales", deptos[i % deptos.length], "Única"));
-                }
-            });
-            return list;
+            }
+            return defaultVal;
+        };
+
+        function getPartyColor(partyName) {
+            let p = String(partyName).toUpperCase().trim();
+            if(partyColors[p]) return partyColors[p];
+            for(const [key, color] of Object.entries(partyColors)) {
+                if(p.includes(key)) return color;
+            }
+            return "#94a3b8";
         }
 
-        function createMockLeg(party, idx, camara, depto, circ) {
-            const abrev = camara === "diputados" ? "Dip." : (camara === "senadores" ? "Sen." : "Sup.");
-            const comisionesList = ["Constitución", "Economía", "Salud", "Educación", "Justicia", "Política Internacional"];
-            const cargo = (idx === 0) ? "Jefe de Bancada" : "Legislador";
-            return {
-                titular: `${abrev} Titular ${party.partido} ${idx+1}`,
-                suplente: `${abrev} Suplente ${party.partido} ${idx+1}`,
-                cargo: cargo,
-                partido: party.partido,
-                camara: camara,
-                departamento: depto,
-                circunscripcion: circ,
-                comision: comisionesList[idx % comisionesList.length],
-                color: party.color,
-                order: party.order,
-                fotoTitular: null,
-                fotoSuplente: null
-            };
+        function buildPhotoUrl(url) {
+            if (!url) return null;
+            let strUrl = String(url).trim();
+            if(strUrl === "" || strUrl.toLowerCase() === "undefined") return null;
+            
+            if (strUrl.includes('drive.google.com') || strUrl.includes('docs.google.com')) {
+                let match = strUrl.match(/[-\w]{25,}/);
+                if (match) return `https://lh3.googleusercontent.com/d/${match[0]}`;
+            }
+            return strUrl;
+        }
+
+        function getAvatarHTML(name, size="w-12 h-12") {
+            const cleanName = (name || "XX").trim();
+            const initials = (cleanName.substring(0, 2)).toUpperCase();
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#e2e8f0"/><text x="50%" y="50%" font-family="Arial" font-size="40" font-weight="bold" fill="#64748b" dominant-baseline="middle" text-anchor="middle">${initials}</text></svg>`;
+            const svgData = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg).replace(/'/g, "%27");
+            return `<img src="${svgData}" class="${size} rounded-full object-cover border border-slate-200">`;
+        }
+
+        function getImgTag(url, name, size="w-12 h-12", customClass="") {
+            const safeAvatar = getAvatarHTML(name, size).match(/src="([^"]+)"/)[1];
+            let processedUrl = buildPhotoUrl(url);
+            if(processedUrl) {
+                return `<img src="${processedUrl}" onerror="this.onerror=null; this.src='${safeAvatar}'" class="${size} ${customClass} object-cover bg-slate-100" alt="${name}">`;
+            } else {
+                return `<img src="${safeAvatar}" class="${size} ${customClass} object-cover bg-slate-100" alt="${name}">`;
+            }
+        }
+
+        function getModalImgTag(url, name) {
+            const safeAvatar = getAvatarHTML(name, "").match(/src="([^"]+)"/)[1];
+            let classStr = "w-full h-full object-contain object-center";
+            let processedUrl = buildPhotoUrl(url);
+            if(processedUrl) {
+                return `<img src="${processedUrl}" onerror="this.onerror=null; this.src='${safeAvatar}'" class="${classStr}" alt="${name}">`;
+            }
+            return `<img src="${safeAvatar}" class="w-full h-full object-cover" alt="${name}">`;
         }
 
         function loadData() {
@@ -434,239 +461,225 @@
             Papa.parse(sheetUrl, {
                 download: true,
                 header: true,
-                dynamicTyping: true,
+                dynamicTyping: false,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    if (results.data.length === 0 || (Object.keys(results.data[0])[0] && Object.keys(results.data[0])[0].includes("<!DOCTYPE html>"))) {
-                        triggerFallback("No se pudo acceder a Google Sheets. Usando datos de respaldo.");
-                        return;
-                    }
-                    
                     try {
                         legisladoresData = [];
-                        
-                        results.data.forEach(row => {
-                            // Normalizador inteligente de llaves (ignora mayus, minus, espacios, tildes)
-                            const getVal = (...keys) => {
-                                for(let key of keys) {
-                                    const exactMatch = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
-                                    if(exactMatch && row[exactMatch] !== null && row[exactMatch] !== '') return String(row[exactMatch]).trim();
-                                    
-                                    // Búsqueda más laxa (quitar tildes)
-                                    const laxMatch = Object.keys(row).find(k => k.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-                                    if(laxMatch && row[laxMatch] !== null && row[laxMatch] !== '') return String(row[laxMatch]).trim();
-                                }
-                                return null;
+                        let comisionesSet = new Set();
+                        let dptsSet = new Set();
+                        let partSet = new Set();
+
+                        results.data.forEach((row, i) => {
+                            let titular = getSafeCol(row, ["Titular", "Nombre Titular", "Nombre", "Legislador"], `Legislador ${i+1}`);
+                            if(titular.toLowerCase().includes("legislador ") && !row["Partido"]) return;
+
+                            let partido = getSafeCol(row, ["Partido", "Fuerza Politica", "Fuerza Política", "Sigla"], "Independiente");
+                            let camaraRaw = getSafeCol(row, ["Camara", "Cámara"], "Diputados").toLowerCase();
+                            let comision = getSafeCol(row, ["Comision", "Comisión"], "Sin Comisión");
+                            let depto = getSafeCol(row, ["Departamento", "Region"], "N/A");
+                            
+                            let alineacionRaw = getSafeCol(row, ["Alineacion", "Alineación", "Alineación ↕", "Lealtad"], "100");
+                            let alineacion = parseFloat(alineacionRaw) || 100;
+
+                            let prensaRaw = getSafeCol(row, ["Prensa", "Voceria", "Declaraciones", "Historial Prensa", "vocería"], "");
+                            let prensaList = prensaRaw.split(/\||\n/).filter(x => x.trim().length > 0).map(x => x.trim());
+
+                            let dataObj = {
+                                id: 'leg_' + i,
+                                titular: titular,
+                                suplente: getSafeCol(row, ["Suplente", "Nombre Suplente"], "No registrado"),
+                                partido: partido,
+                                camara: camaraRaw.includes("sen") ? "senadores" : (camaraRaw.includes("sup") ? "supraestatales" : "diputados"),
+                                departamento: depto,
+                                circunscripcion: getSafeCol(row, ["Circunscripcion", "Posicion", "Circunscripción", "Posición"], "N/A"),
+                                comision: comision,
+                                cargo: getSafeCol(row, ["Cargo", "Rol", "Funcion"], "Legislador"),
+                                color: getPartyColor(partido),
+                                alineacion: alineacion,
+                                fotoTitular: buildPhotoUrl(getSafeCol(row, ["Foto Titular", "Foto", "Fotografía", "Link Foto", "Imagen"], "")),
+                                fotoSuplente: buildPhotoUrl(getSafeCol(row, ["Foto Suplente"], "")),
+                                prensa: prensaList,
+                                order: fallbackData.find(f => f.partido === partido)?.order || 99
                             };
 
-                            const titular = getVal("titular", "nombre", "nombre titular", "legislador");
-                            
-                            if (titular) {
-                                let rawCamara = (getVal("camara", "cámara") || "diputados").toLowerCase();
-                                let camaraLimpia = "diputados";
-                                if(rawCamara.includes("sen")) camaraLimpia = "senadores";
-                                else if(rawCamara.includes("sup") || rawCamara.includes("rep")) camaraLimpia = "supraestatales";
-
-                                let partido = getVal("partido", "fuerza", "sigla") || "Independiente";
-                                let color = getVal("color") || fallbackData.find(f => f.partido.toLowerCase() === partido.toLowerCase())?.color || stringToColor(partido);
-
-                                // Extraer Fotos de Titular y Suplente y formatear URLs de Drive
-                                const processDriveUrl = (url) => {
-                                    if (!url) return null;
-                                    if (url.includes('drive.google.com/file/d/')) {
-                                        const match = url.match(/[-\w]{25,}/); // Extraer el ID
-                                        if (match) return `https://drive.google.com/uc?export=view&id=${match[0]}`;
-                                    }
-                                    return url;
-                                };
-
-                                let rawFotoTitular = getVal("foto titular", "foto", "fotografia", "fotografía", "imagen", "enlace foto", "url foto");
-                                let rawFotoSuplente = getVal("foto suplente", "fotografia suplente", "fotografía suplente", "imagen suplente");
-
-                                legisladoresData.push({
-                                    titular: titular,
-                                    suplente: getVal("suplente", "nombre suplente") || "No registrado",
-                                    cargo: getVal("cargo", "rol", "funcion", "función", "puesto", "jefatura") || "Legislador",
-                                    partido: partido,
-                                    camara: camaraLimpia,
-                                    departamento: getVal("departamento", "region", "región", "dpto") || "N/A",
-                                    circunscripcion: getVal("circunscripcion", "circunscripción", "posicion", "posición") || "N/A",
-                                    comision: getVal("comision", "comisión", "comite", "comité") || "Sin asignar",
-                                    color: color,
-                                    fotoTitular: processDriveUrl(rawFotoTitular),
-                                    fotoSuplente: processDriveUrl(rawFotoSuplente),
-                                    order: parseInt(getVal("orden", "order") || fallbackData.find(f => f.partido === partido)?.order || 99)
-                                });
-                            }
+                            legisladoresData.push(dataObj);
+                            if(comision !== "Sin Comisión") comisionesSet.add(comision);
+                            dptsSet.add(depto);
+                            partSet.add(partido);
                         });
-
-                        if(legisladoresData.length === 0) throw new Error("Archivo CSV vacío o con formato inválido");
                         
-                        alertBox.classList.add('hidden');
+                        document.getElementById("data-alert").classList.add('hidden');
+                        populateSelects(comisionesSet, partSet, dptsSet);
+                        
                         updateDashboard();
+                        renderEjecutivo();
+                        renderDirectorio();
+                        renderVoceria();
+                        runSmartSimulation();
+
                     } catch (e) {
-                        triggerFallback(e.message);
+                        console.error("Error parseando CSV", e);
+                        showFallbackError();
                     }
                 },
-                error: function() {
-                    triggerFallback("Error de conexión al cargar datos externos.");
+                error: function(err) {
+                    showFallbackError();
                 }
             });
         }
 
-        function triggerFallback(msg) {
-            console.warn(msg);
-            legisladoresData = generateFallbackLegislators();
-            alertText.textContent = msg;
-            alertBox.classList.remove('hidden');
+        function showFallbackError() {
+            document.getElementById('data-alert-text').textContent = "Conexión limitada. Mostrando datos de simulación por defecto.";
+            document.getElementById("data-alert").classList.remove('hidden');
+            
+            legisladoresData = [];
+            fallbackData.forEach(p => {
+                for(let i=0; i<p.diputados; i++){
+                    legisladoresData.push({ id:`f_d_${p.partido}_${i}`, titular: `Diputado ${p.partido} ${i+1}`, partido: p.partido, camara: "diputados", departamento: "La Paz", circunscripcion: `C-${i+1}`, comision:"Constitución", cargo: i===0?"Jefe de Bancada":"Legislador", color: getPartyColor(p.partido), alineacion: 70+(Math.random()*30), prensa: ["01/01/2026: Entrevista en TV", "05/02/2026: Rueda de Prensa"], fotoTitular: null });
+                }
+                for(let i=0; i<p.senadores; i++){
+                    legisladoresData.push({ id:`f_s_${p.partido}_${i}`, titular: `Senador ${p.partido} ${i+1}`, partido: p.partido, camara: "senadores", departamento: "Santa Cruz", circunscripcion: "Lista Depto", comision:"Economía", cargo: "Legislador", color: getPartyColor(p.partido), alineacion: 85, prensa:[], fotoTitular: null });
+                }
+            });
+            updateDashboard();
+            renderEjecutivo();
+            renderDirectorio();
+            renderVoceria();
+            runSmartSimulation();
+        }
+
+        function populateSelects(comisiones, partidos, deptos) {
+            const cSel = document.getElementById("comision-selector");
+            cSel.innerHTML = '<option value="todas">Todas las Comisiones</option>';
+            Array.from(comisiones).sort().forEach(c => {
+                cSel.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+
+            const pSel = document.getElementById("filter-partido");
+            pSel.innerHTML = '<option value="">Fuerza Política: Todas</option>';
+            Array.from(partidos).sort().forEach(p => {
+                pSel.innerHTML += `<option value="${p}">${p}</option>`;
+            });
+        }
+
+        function switchMainTab(tabId) {
+            document.querySelectorAll('.main-tab').forEach(t => {
+                t.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                t.classList.add('border-transparent');
+            });
+            document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+            
+            document.querySelectorAll('.view-section').forEach(v => {
+                v.classList.add('hidden');
+                v.classList.remove('block');
+            });
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`view-${tabId}`).classList.add('block');
+
+            if(tabId === 'hemiciclo') updateDashboard();
+            if(tabId === 'intensidad') renderIntensidad();
+            if(tabId === 'simulacion') renderSimulacionChart();
+        }
+
+        function setChamber(chamber) {
+            currentChamber = chamber;
+            
+            document.querySelectorAll('.chamber-btn').forEach(b => {
+                b.classList.remove('active', 'bg-slate-800', 'text-white', 'shadow-md');
+                b.classList.add('text-slate-600', 'hover:bg-slate-50');
+            });
+            
+            let activeBtn = document.getElementById(`btn-${chamber}`);
+            if(activeBtn) {
+                activeBtn.classList.add('active', 'bg-slate-800', 'text-white', 'shadow-md');
+                activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-50');
+            }
+            
+            document.getElementById("comision-selector").value = "todas";
             updateDashboard();
         }
 
-        function stringToColor(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            let color = '#';
-            for (let i = 0; i < 3; i++) color += ('00' + ((hash >> (i * 8)) & 0xFF).toString(16)).substr(-2);
-            return color;
+        function applyComisionFilter() {
+            updateDashboard(); 
         }
 
-        tabGrafico.addEventListener('click', () => {
-            currentView = 'chart';
-            tabGrafico.classList.add('active', 'text-blue-600');
-            tabGrafico.classList.remove('text-gray-500');
-            tabTabla.classList.remove('active', 'text-blue-600');
-            tabTabla.classList.add('text-gray-500');
-            
-            viewChart.classList.remove('hidden');
-            viewTable.classList.add('hidden');
-        });
+        function renderEjecutivo() {
+            let stats = {};
+            let tDip = 0, tSen = 0, tSup = 0, totalGlobal = 0;
 
-        tabTabla.addEventListener('click', () => {
-            currentView = 'table';
-            tabTabla.classList.add('active', 'text-blue-600');
-            tabTabla.classList.remove('text-gray-500');
-            tabGrafico.classList.remove('active', 'text-blue-600');
-            tabGrafico.classList.add('text-gray-500');
-            
-            viewTable.classList.remove('hidden');
-            viewChart.classList.add('hidden');
-            renderTable(); // Forzar render al mostrar
-        });
-
-        chamberBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const targetCamera = e.target.getAttribute('data-camera');
-                currentChamber = targetCamera;
+            legisladoresData.forEach(leg => {
+                if(!stats[leg.partido]) {
+                    stats[leg.partido] = { partido: leg.partido, color: leg.color, dip: 0, sen: 0, sup: 0, total: 0 };
+                }
+                if(leg.camara === 'diputados') { stats[leg.partido].dip++; tDip++; }
+                else if(leg.camara === 'senadores') { stats[leg.partido].sen++; tSen++; }
+                else if(leg.camara === 'supraestatales') { stats[leg.partido].sup++; tSup++; }
                 
-                // Reset estilos
-                chamberBtns.forEach(b => {
-                    b.classList.remove('active', 'bg-blue-600', 'text-white');
-                    b.classList.add('text-gray-600', 'hover:bg-gray-50');
-                });
-                
-                // Aplicar activo
-                e.target.classList.add('active', 'bg-blue-600', 'text-white');
-                e.target.classList.remove('text-gray-600', 'hover:bg-gray-50');
-                
-                updateDashboard();
+                stats[leg.partido].total++;
+                totalGlobal++;
             });
-        });
 
-        function updateDashboard() {
-            let activeLegisladores = [];
-            let groupByKey = 'partido'; // Por defecto agrupar por partido
+            document.getElementById('exec-total').textContent = totalGlobal;
+            document.getElementById('exec-diputados').textContent = tDip;
+            document.getElementById('exec-senadores').textContent = tSen;
 
-            // 1. Filtrado dinámico según la pestaña seleccionada
-            if (currentChamber === 'comisiones') {
-                activeLegisladores = legisladoresData.filter(d => d.comision && !['sin asignar', 'n/a', ''].includes(d.comision.toLowerCase()));
-                groupByKey = 'comision'; // En la vista de comisiones, agrupamos por comisión
-            } else if (currentChamber === 'bancada') {
-                activeLegisladores = legisladoresData.filter(d => d.cargo && (d.cargo.toLowerCase().includes('jefe') || d.cargo.toLowerCase().includes('bancada') || d.cargo.toLowerCase().includes('jefatura')));
-                groupByKey = 'partido';
-            } else {
-                activeLegisladores = legisladoresData.filter(d => d.camara === currentChamber);
-            }
-            
-            const totalSeats = activeLegisladores.length;
+            let sortedStats = Object.values(stats).sort((a, b) => b.total - a.total);
+            let tbody = document.getElementById('exec-matrix-body');
+            tbody.innerHTML = '';
 
-            if (totalSeats === 0) {
-                d3.select("#chart").html(`<div class="text-gray-400 font-bold text-xl">Sin datos para esta clasificación</div>`);
-                legendContainer.innerHTML = '';
-                elMajorityAbs.textContent = "0";
-                elMajorityTwoThirds.textContent = "0";
-            } else {
-                // 2. Agrupar para gráfico y leyenda dinámicamente
-                let groupMap = new Map();
-                activeLegisladores.forEach(leg => {
-                    const key = groupByKey === 'comision' ? leg.comision : leg.partido;
-                    if (!groupMap.has(key)) {
-                        const color = groupByKey === 'comision' ? stringToColor(leg.comision) : leg.color;
-                        groupMap.set(key, { name: key, count: 0, color: color, order: leg.order, miembros: [] });
-                    }
-                    groupMap.get(key).count++;
-                    groupMap.get(key).miembros.push(leg);
-                });
-
-                const groups = Array.from(groupMap.values());
-                const chartData = [...groups].sort((a, b) => {
-                    if (groupByKey === 'comision') return b.count - a.count;
-                    return (a.order || 0) - (b.order || 0);
-                });
-                const legendData = [...groups].sort((a, b) => b.count - a.count);
-
-                elMajorityAbs.textContent = Math.floor(totalSeats / 2) + 1 + " registros";
-                elMajorityTwoThirds.textContent = Math.ceil(totalSeats * (2/3)) + " registros";
-
-                drawParliamentChart(chartData, totalSeats, groupByKey);
-                drawLegend(legendData, groupByKey);
-            }
-
-            // Forzar agrupación en tabla dependiendo de la pestaña
-            if (currentChamber === 'comisiones' && !groupByState) {
-                groupSelect.value = 'comision';
-                groupByState = 'comision';
-                crossSelect.disabled = false;
-            } else if (currentChamber === 'bancada' && !groupByState) {
-                groupSelect.value = 'partido';
-                groupByState = 'partido';
-                crossSelect.disabled = false;
-            }
-
-            populateFilters(activeLegisladores);
-            renderTable(activeLegisladores);
+            sortedStats.forEach((s, idx) => {
+                let p = totalGlobal > 0 ? (s.total / totalGlobal) * 100 : 0;
+                let delay = idx * 0.1;
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors animate-fade" style="animation-delay: ${delay}s; opacity:0; animation-fill-mode: forwards;">
+                        <td class="p-4 border-b border-slate-100 flex items-center">
+                            <div class="w-4 h-4 rounded-full mr-3 shrink-0" style="background-color: ${s.color}"></div>
+                            <span class="font-bold text-slate-700 uppercase">${s.partido}</span>
+                        </td>
+                        <td class="p-4 border-b border-slate-100 text-center font-medium text-slate-600">${s.dip || '-'}</td>
+                        <td class="p-4 border-b border-slate-100 text-center font-medium text-slate-600">${s.sen || '-'}</td>
+                        <td class="p-4 border-b border-slate-100 text-center font-medium text-slate-600">${s.sup || '-'}</td>
+                        <td class="p-4 border-b border-slate-100 text-center font-black text-slate-800 bg-slate-50/50">${s.total}</td>
+                        <td class="p-4 border-b border-slate-100 w-1/3">
+                            <div class="flex items-center w-full">
+                                <div class="w-full bg-slate-100 rounded-full h-2.5 mr-3 overflow-hidden shadow-inner">
+                                    <div class="h-2.5 rounded-full" style="width: ${p}%; background-color: ${s.color};"></div>
+                                </div>
+                                <span class="text-xs font-bold text-slate-500 w-10 text-right">${p.toFixed(1)}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
         function getParliamentPoints(totalSeats, numRows, innerRadius, outerRadius) {
             let points = [];
             let rowCounts = [];
             
-            // Layouts específicos para Bolivia
             if (totalSeats === 130) {
-                rowCounts = [21, 29, 37, 43]; 
+                rowCounts = [21, 29, 37, 43];
                 numRows = 4;
             } else if (totalSeats === 36) {
-                rowCounts = [15, 21]; 
+                rowCounts = [15, 21];
                 numRows = 2;
-            } else if (totalSeats <= 15) {
+            } else if (totalSeats < 15) {
                 rowCounts = [totalSeats];
                 numRows = 1;
             } else {
-                // Cálculo dinámico proporcional para las nuevas vistas (Comisiones, Bancadas)
-                if (totalSeats > 100) numRows = 5;
-                else if (totalSeats > 50) numRows = 4;
-                else if (totalSeats > 20) numRows = 3;
-                else numRows = 2;
-
                 let rowRadii = [];
-                for (let i = 0; i < numRows; i++) rowRadii.push(innerRadius + (outerRadius - innerRadius) * (i / Math.max(1, (numRows - 1))));
+                for (let i = 0; i < numRows; i++) {
+                    rowRadii.push(innerRadius + (outerRadius - innerRadius) * (i / Math.max(1, (numRows - 1))));
+                }
                 let totalArcLength = rowRadii.reduce((sum, r) => sum + r * Math.PI, 0);
                 rowCounts = rowRadii.map(r => Math.round(totalSeats * ((r * Math.PI) / totalArcLength)));
                 
                 let currentTotal = rowCounts.reduce((a, b) => a + b, 0);
                 let diff = totalSeats - currentTotal;
-                
                 if (diff !== 0) {
-                    let i = numRows - 1;
+                    let i = numRows - 1; 
                     while (diff !== 0) {
                         let adjust = diff > 0 ? 1 : -1;
                         rowCounts[i] += adjust;
@@ -686,54 +699,104 @@
                 let seats = rowCounts[i];
                 for (let j = 0; j < seats; j++) {
                     let theta = seats > 1 ? Math.PI - (j / (seats - 1)) * Math.PI : Math.PI / 2;
-                    points.push({ x: Math.cos(theta) * r, y: -Math.sin(theta) * r, angle: theta, r: r, row: i });
+                    points.push({
+                        x: Math.cos(theta) * r,
+                        y: -Math.sin(theta) * r,
+                        angle: theta,
+                        r: r
+                    });
                 }
             }
-            
             points.sort((a, b) => (b.angle - a.angle) || (a.r - b.r));
             return points;
         }
 
-        function drawParliamentChart(data, totalSeats, groupByKey = 'partido') {
-            d3.select("#chart").selectAll("*").remove();
+        function updateDashboard() {
+            let activeData = [];
             
-            // Configurar viewport basado en el contenedor
-            const containerWidth = document.getElementById('chart').clientWidth || 600;
-            const containerHeight = document.getElementById('chart').clientHeight || 450;
+            if (currentChamber === 'jefes') {
+                activeData = legisladoresData.filter(d => 
+                    d.cargo.toLowerCase().includes('jefe') || 
+                    d.cargo.toLowerCase().includes('bancada')
+                );
+            } else {
+                activeData = legisladoresData.filter(d => d.camara === currentChamber);
+            }
+
+            let partyMap = new Map();
+            activeData.forEach(leg => {
+                if (!partyMap.has(leg.partido)) {
+                    partyMap.set(leg.partido, { partido: leg.partido, count: 0, color: leg.color, order: leg.order, miembros: [] });
+                }
+                partyMap.get(leg.partido).count++;
+                partyMap.get(leg.partido).miembros.push(leg);
+            });
+
+            const partyGroups = Array.from(partyMap.values());
+            const chartData = [...partyGroups].sort((a, b) => a.order - b.order);
+            const legendData = [...partyGroups].sort((a, b) => b.count - a.count);
+            const totalSeats = activeData.length;
+
+            const elAbs = document.getElementById("majority-absolute");
+            const elTwo = document.getElementById("majority-twothirds");
             
+            if (totalSeats > 0) {
+                if(totalSeats === 130) {
+                    elAbs.textContent = "66"; elTwo.textContent = "87";
+                } else if (totalSeats === 36) {
+                    elAbs.textContent = "19"; elTwo.textContent = "24";
+                } else {
+                    elAbs.textContent = Math.floor(totalSeats / 2) + 1;
+                    elTwo.textContent = Math.ceil(totalSeats * (2/3));
+                }
+            } else {
+                elAbs.textContent = "0"; elTwo.textContent = "0";
+            }
+
+            drawParliamentChart(chartData, totalSeats, "#chart");
+            drawLegend(legendData);
+        }
+
+        function drawParliamentChart(data, totalSeats, containerId) {
+            d3.select(containerId).selectAll("*").remove();
+            if(totalSeats === 0) return;
+
+            const comisionFiltro = document.getElementById("comision-selector") ? document.getElementById("comision-selector").value : "todas";
+
             const width = 600;
             const height = 350;
-            
-            const numRows = totalSeats > 100 ? 5 : (totalSeats > 20 ? 3 : 1); 
-            const innerRadius = totalSeats > 100 ? 120 : (totalSeats > 20 ? 150 : 200);
-            const outerRadius = 280;
-            const dotRadius = totalSeats > 100 ? 8 : (totalSeats > 20 ? 12 : 20);
+            const numRows = totalSeats > 100 ? 5 : (totalSeats > 20 ? 3 : 2); 
+            const innerRadius = totalSeats > 100 ? 100 : 120;
+            const outerRadius = 260;
+            const dotRadius = totalSeats > 100 ? 8 : 11;
 
-            const svg = d3.select("#chart")
+            const svg = d3.select(containerId)
                 .append("svg")
                 .attr("width", "100%")
                 .attr("height", "100%")
                 .attr("viewBox", `0 0 ${width} ${height}`)
                 .attr("preserveAspectRatio", "xMidYMid meet")
                 .append("g")
-                .attr("transform", `translate(${width / 2}, ${height - 30})`);
+                .attr("transform", `translate(${width / 2}, ${height - 30})`); 
 
             const points = getParliamentPoints(totalSeats, numRows, innerRadius, outerRadius);
-            
+
             let seatIndex = 0;
             const mappedPoints = [];
-            data.forEach(group => {
-                group.miembros.forEach(miembro => {
+            
+            data.forEach(party => {
+                party.miembros.forEach(miembro => {
                     if (seatIndex < points.length) {
-                        mappedPoints.push({ 
-                            ...points[seatIndex], 
-                            ...miembro,
-                            displayColor: group.color // Usar el color del grupo o comisión asignado
+                        mappedPoints.push({
+                            ...points[seatIndex],
+                            ...miembro 
                         });
                         seatIndex++;
                     }
                 });
             });
+
+            const tooltip = d3.select("#tooltip");
 
             svg.selectAll("circle")
                 .data(mappedPoints)
@@ -741,101 +804,49 @@
                 .append("circle")
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
-                .attr("r", 0)
-                .attr("fill", d => d.displayColor)
+                .attr("r", 0) 
+                .attr("fill", d => d.color)
+                .attr("opacity", d => {
+                    if (comisionFiltro !== "todas" && d.comision !== comisionFiltro) return 0.15;
+                    return 1;
+                })
                 .style("cursor", "pointer")
-                .style("stroke", "#fff")
-                .style("stroke-width", "1px")
                 .on("mouseover", function(event, d) {
-                    d3.select(this)
-                        .transition().duration(200)
-                        .attr("r", dotRadius + 4)
-                        .style("stroke", "#000")
-                        .style("stroke-width", "2px");
-                        
-                    tooltip.transition().duration(200).style("opacity", 1);
+                    d3.select(this).attr("stroke", "#0f172a").attr("stroke-width", 2);
                     
-                    // Generar Avatar Titular
-                    const avatarTitular = d.fotoTitular ? d.fotoTitular : `https://ui-avatars.com/api/?name=${encodeURIComponent(d.titular)}&background=f1f5f9&color=64748b&size=128`;
+                    const avatarHTML = getImgTag(d.fotoTitular, d.titular, "w-16 h-16", "rounded-full shadow-sm border-2 border-white absolute -top-8 left-1/2 transform -translate-x-1/2");
                     
-                    // Generar Avatar Suplente
-                    let suplenteHtml = '';
-                    if (d.suplente && d.suplente.toLowerCase() !== 'no registrado' && d.suplente.toLowerCase() !== 'n/a') {
-                        const avatarSuplente = d.fotoSuplente ? d.fotoSuplente : `https://ui-avatars.com/api/?name=${encodeURIComponent(d.suplente)}&background=f8fafc&color=94a3b8&size=128`;
-                        suplenteHtml = `
-                        <div class="flex items-start gap-3 mb-3">
-                            <img src="${avatarSuplente}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(d.suplente)}&background=f8fafc&color=94a3b8&size=128'" alt="${d.suplente}" class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white opacity-90">
-                            <div>
-                                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Suplente</div>
-                                <div class="font-medium text-gray-600 text-xs leading-tight">${d.suplente}</div>
-                            </div>
-                        </div>`;
-                    } else {
-                        suplenteHtml = `
-                        <div class="mb-3">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Suplente</div>
-                            <div class="font-medium text-gray-400 text-xs italic leading-tight">No registrado</div>
-                        </div>`;
-                    }
-
+                    tooltip.transition().duration(150).style("opacity", 1);
                     tooltip.html(`
-                        <div class="p-3 w-64 md:w-72">
-                            <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
-                                <span class="text-xs font-black uppercase tracking-wider" style="color: ${d.displayColor};">${groupByKey === 'comision' ? d.comision : d.partido}</span>
-                                <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase">${d.camara}</span>
-                            </div>
+                        <div class="relative pt-10 pb-4 px-5 text-center">
+                            ${avatarHTML}
+                            <div class="text-[9px] font-black uppercase tracking-widest mb-1 mt-1 text-slate-400">${d.cargo}</div>
+                            <div class="font-black text-slate-800 text-base leading-tight mb-0.5">${d.titular}</div>
+                            <div class="text-xs font-semibold" style="color: ${d.color};">${d.partido} • <span class="uppercase">${d.camara}</span></div>
                             
-                            <!-- Titular -->
-                            <div class="flex items-start gap-3 mb-3">
-                                <img src="${avatarTitular}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(d.titular)}&background=f1f5f9&color=64748b&size=128'" alt="${d.titular}" class="w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white">
+                            <div class="mt-4 grid grid-cols-2 gap-2 text-left bg-slate-50 p-2 rounded-lg border border-slate-100">
                                 <div>
-                                    ${d.cargo && d.cargo !== 'Legislador' ? `<div class="text-[10px] text-blue-600 uppercase font-black tracking-widest mb-0.5">${d.cargo}</div>` : `<div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Titular</div>`}
-                                    <div class="font-bold text-gray-800 text-sm leading-tight">${d.titular}</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Suplente -->
-                            ${suplenteHtml}
-
-                            <!-- Ubicación -->
-                            <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 rounded-lg p-2 border border-gray-100 mt-2">
-                                <div>
-                                    <span class="block text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Departamento</span>
-                                    <span class="font-bold text-gray-700 truncate block">${d.departamento}</span>
+                                    <div class="text-[9px] font-bold text-slate-400 uppercase">Depto</div>
+                                    <div class="text-xs font-bold text-slate-700 truncate">${d.departamento}</div>
                                 </div>
                                 <div>
-                                    <span class="block text-[9px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Circ. / Posición</span>
-                                    <span class="font-bold text-gray-700 truncate block">${d.circunscripcion}</span>
+                                    <div class="text-[9px] font-bold text-slate-400 uppercase">Circ / Pos</div>
+                                    <div class="text-xs font-bold text-slate-700 truncate">${d.circunscripcion}</div>
                                 </div>
-                            </div>
-
-                            <div class="text-center mt-3 pt-2 border-t border-gray-100">
-                                <span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded-full border border-gray-100">👆 Haz clic para ver detalles</span>
                             </div>
                         </div>
                     `)
-                    .style("left", (event.pageX + 15) + "px")
-                    .style("top", (event.pageY - 120) + "px"); 
+                    .style("left", (event.pageX - 160) + "px")
+                    .style("top", (event.pageY - 200) + "px"); 
                 })
                 .on("mouseout", function() {
-                    d3.select(this)
-                        .transition().duration(200)
-                        .attr("r", dotRadius)
-                        .style("stroke", "#fff")
-                        .style("stroke-width", "1px");
+                    d3.select(this).attr("stroke", "none");
                     tooltip.transition().duration(200).style("opacity", 0);
                 })
                 .on("click", function(event, d) {
-                    // Prevenir que el click se propague y cierre el modal inmediatamente
-                    event.stopPropagation();
-                    
-                    // Ocultar tooltip al abrir el modal para que no estorbe
-                    tooltip.style("opacity", 0);
-                    
-                    // Abrir la ventana con los datos
-                    openLegislatorModal(d);
+                    showModal(d);
                 })
-                .transition()
+                .transition() 
                 .delay((d, i) => i * (800 / totalSeats))
                 .duration(400)
                 .attr("r", dotRadius);
@@ -843,35 +854,38 @@
             svg.append("text")
                 .attr("text-anchor", "middle")
                 .attr("x", 0)
-                .attr("y", -30) 
+                .attr("y", -10)
                 .text(totalSeats)
-                .style("font-size", "72px")
+                .style("font-size", "64px")
+                .style("font-weight", "900")
+                .style("font-family", "Inter")
+                .style("fill", "#0f172a");
+                
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("x", 0)
+                .attr("y", 15)
+                .text("ESCAÑOS")
+                .style("font-size", "14px")
                 .style("font-weight", "800")
-                .style("fill", "#1e293b")
-                .style("opacity", 0)
-                .transition().duration(1000).style("opacity", 1);
+                .style("letter-spacing", "0.1em")
+                .style("fill", "#64748b");
         }
 
-        function drawLegend(data, groupByKey = 'partido') {
+        function drawLegend(data) {
+            const legendContainer = document.getElementById("legend");
             legendContainer.innerHTML = '';
             
-            let itemLabel = "Escaños";
-            if(currentChamber === 'diputados') itemLabel = 'Diputados';
-            else if(currentChamber === 'senadores') itemLabel = 'Senadores';
-            else if(currentChamber === 'supraestatales') itemLabel = 'Supraestatales';
-            else if(currentChamber === 'bancada') itemLabel = 'Miembros';
-            else if(currentChamber === 'comisiones') itemLabel = 'Miembros';
-
-            data.forEach((group, index) => {
-                const animDelay = index * 0.08;
+            data.forEach((party, index) => {
+                const animDelay = index * 0.05;
                 const itemHTML = `
-                    <div class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-default" style="animation: slideIn 0.4s ease forwards ${animDelay}s; opacity: 0; transform: translateX(-15px);">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-sm flex-shrink-0" style="background-color: ${group.color};">
-                            <svg class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                        </div>
-                        <div class="ml-4">
-                            <div class="font-extrabold text-gray-800 text-base leading-tight">${group.name}</div>
-                            <div class="text-gray-500 text-sm font-medium">${group.count} ${itemLabel}</div>
+                    <div class="flex items-center justify-between group p-2 rounded-lg hover:bg-slate-50 transition-colors" style="animation: slideUp 0.3s ease forwards ${animDelay}s; opacity: 0;">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center shadow-sm text-white font-black text-xs" 
+                                 style="background-color: ${party.color};">
+                                ${party.count}
+                            </div>
+                            <div class="ml-3 font-bold text-slate-700 text-sm uppercase tracking-wide">${party.partido}</div>
                         </div>
                     </div>
                 `;
@@ -879,295 +893,361 @@
             });
         }
 
-        // Listeners de Tabla
-        searchInput.addEventListener('input', renderTable);
-        filterPartido.addEventListener('change', (e) => { filtersState.partido = e.target.value; renderTable(); });
-        filterDepartamento.addEventListener('change', (e) => { filtersState.departamento = e.target.value; renderTable(); });
-        
-        groupSelect.addEventListener('change', (e) => {
-            groupByState = e.target.value;
-            crossSelect.disabled = !groupByState;
-            if(!groupByState) { crossSelect.value = ''; crossByState = ''; }
-            renderTable();
-        });
-        
-        crossSelect.addEventListener('change', (e) => { crossByState = e.target.value; renderTable(); });
-
-        sortHeaders.forEach(th => {
-            th.addEventListener('click', () => {
-                const sortKey = th.getAttribute('data-sort');
-                if (sortConfig.key === sortKey) {
-                    sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortConfig.key = sortKey;
-                    sortConfig.direction = 'asc';
-                }
-                updateSortIcons();
-                renderTable();
-            });
-        });
-
-        function updateSortIcons() {
-            sortHeaders.forEach(th => {
-                th.classList.remove('sort-asc', 'sort-desc');
-                if (th.getAttribute('data-sort') === sortConfig.key) {
-                    th.classList.add(sortConfig.direction === 'asc' ? 'sort-asc' : 'sort-desc');
-                }
-            });
+        function sortTable(column) {
+            if(currentSort.col === column) {
+                currentSort.asc = !currentSort.asc;
+            } else {
+                currentSort.col = column;
+                currentSort.asc = true;
+            }
+            renderDirectorio();
         }
 
-        function populateFilters(data) {
-            const partidos = [...new Set(data.map(d => d.partido))].sort();
-            const departamentos = [...new Set(data.map(d => d.departamento))].sort();
+        function renderDirectorio() {
+            let sText = document.getElementById('search-table').value.toLowerCase();
+            let pFilter = document.getElementById('filter-partido').value;
+            let groupObj = document.getElementById('group-table').value;
 
-            const pVal = filterPartido.value;
-            filterPartido.innerHTML = '<option value="">Todos los Partidos</option>';
-            partidos.forEach(p => filterPartido.innerHTML += `<option value="${p}">${p}</option>`);
-            if(partidos.includes(pVal)) filterPartido.value = pVal; else filtersState.partido = '';
-
-            const dVal = filterDepartamento.value;
-            filterDepartamento.innerHTML = '<option value="">Todos los Deptos.</option>';
-            departamentos.forEach(d => filterDepartamento.innerHTML += `<option value="${d}">${d}</option>`);
-            if(departamentos.includes(dVal)) filterDepartamento.value = dVal; else filtersState.departamento = '';
-        }
-
-        function renderTable(activeLegisladores = null) {
-            if(!activeLegisladores) {
-                if (currentChamber === 'comisiones') {
-                    activeLegisladores = legisladoresData.filter(d => d.comision && !['sin asignar', 'n/a', ''].includes(d.comision.toLowerCase()));
-                } else if (currentChamber === 'bancada') {
-                    activeLegisladores = legisladoresData.filter(d => d.cargo && (d.cargo.toLowerCase().includes('jefe') || d.cargo.toLowerCase().includes('bancada') || d.cargo.toLowerCase().includes('jefatura')));
-                } else {
-                    activeLegisladores = legisladoresData.filter(d => d.camara === currentChamber);
-                }
-            }
-
-            // 1. Filtros Dropdowns
-            let data = activeLegisladores.filter(leg => {
-                if(filtersState.partido && leg.partido !== filtersState.partido) return false;
-                if(filtersState.departamento && leg.departamento !== filtersState.departamento) return false;
-                return true;
+            let filtered = legisladoresData.filter(d => {
+                let matchText = d.titular.toLowerCase().includes(sText) || 
+                                d.partido.toLowerCase().includes(sText) || 
+                                d.comision.toLowerCase().includes(sText) ||
+                                d.cargo.toLowerCase().includes(sText);
+                let matchPart = pFilter === "" || d.partido === pFilter;
+                return matchText && matchPart;
             });
 
-            // 2. Búsqueda Textual
-            const term = searchInput.value.toLowerCase().trim();
-            if (term) {
-                data = data.filter(leg => 
-                    (leg.titular && leg.titular.toLowerCase().includes(term)) ||
-                    (leg.suplente && leg.suplente.toLowerCase().includes(term)) ||
-                    (leg.partido && leg.partido.toLowerCase().includes(term)) ||
-                    (leg.departamento && leg.departamento.toLowerCase().includes(term)) ||
-                    (leg.comision && leg.comision.toLowerCase().includes(term)) ||
-                    (leg.camara && leg.camara.toLowerCase().includes(term))
-                );
-            }
+            filtered.sort((a, b) => {
+                let valA = a[currentSort.col];
+                let valB = b[currentSort.col];
+                
+                if(currentSort.col === 'alineacion') {
+                    valA = parseFloat(valA); valB = parseFloat(valB);
+                } else {
+                    valA = String(valA).toLowerCase(); valB = String(valB).toLowerCase();
+                }
 
-            // 3. Ordenamiento
-            if (sortConfig.key) {
-                data.sort((a, b) => {
-                    let valA = (a[sortConfig.key] || '').toString().toLowerCase();
-                    let valB = (b[sortConfig.key] || '').toString().toLowerCase();
-                    if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-                    if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-                    return 0;
+                if(valA < valB) return currentSort.asc ? -1 : 1;
+                if(valA > valB) return currentSort.asc ? 1 : -1;
+                return 0;
+            });
+
+            let tbody = document.getElementById('table-body');
+            let emptyMsg = document.getElementById('table-empty');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyMsg.classList.remove('hidden');
+            } else {
+                emptyMsg.classList.add('hidden');
+                
+                let currentGroup = null;
+
+                filtered.forEach(d => {
+                    if(groupObj !== "ninguno") {
+                        let grpVal = d[groupObj];
+                        if(grpVal !== currentGroup) {
+                            currentGroup = grpVal;
+                            tbody.innerHTML += `
+                                <tr class="bg-slate-100">
+                                    <td colspan="9" class="p-3 text-xs font-black text-slate-600 uppercase tracking-widest">${currentGroup}</td>
+                                </tr>
+                            `;
+                        }
+                    }
+
+                    const imgHTML = getImgTag(d.fotoTitular, d.titular, "w-8 h-8", "rounded border border-slate-200");
+                    let alColor = d.alineacion >= 80 ? 'bg-emerald-500' : (d.alineacion >= 50 ? 'bg-amber-400' : 'bg-red-500');
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-blue-50/50 transition-colors group cursor-pointer" onclick="showModal(legisladoresData.find(x => x.id === '${d.id}'))">
+                            <td class="p-2 pl-3">${imgHTML}</td>
+                            <td class="p-3">
+                                <div class="font-bold text-slate-800">${d.titular}</div>
+                                <div class="text-[10px] uppercase font-bold text-slate-400">${d.cargo}</div>
+                            </td>
+                            <td class="p-3 text-slate-600 font-medium">${d.suplente}</td>
+                            <td class="p-3 font-bold" style="color: ${d.color}">${d.partido}</td>
+                            <td class="p-3 text-slate-600 uppercase text-xs font-bold tracking-wide">${d.camara}</td>
+                            <td class="p-3 text-slate-600">${d.departamento}</td>
+                            <td class="p-3 text-slate-600 font-medium">${d.circunscripcion}</td>
+                            <td class="p-3 text-slate-600 text-xs">${d.comision}</td>
+                            <td class="p-3">
+                                <div class="flex items-center w-full min-w-[80px]">
+                                    <span class="text-xs font-bold text-slate-700 w-8 text-right mr-2">${d.alineacion}%</span>
+                                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                        <div class="h-1.5 rounded-full ${alColor}" style="width: ${d.alineacion}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
                 });
             }
-            updateSortIcons();
+        }
+        document.getElementById('search-table').addEventListener('keyup', renderDirectorio);
+        document.getElementById('filter-partido').addEventListener('change', renderDirectorio);
+        document.getElementById('group-table').addEventListener('change', renderDirectorio);
 
-            tableBody.innerHTML = '';
-            tableCount.textContent = data.length;
+        function renderVoceria() {
+            let sText = document.getElementById('search-voceria').value.toLowerCase();
+            let container = document.getElementById('voceria-grid');
+            let emptyMsg = document.getElementById('voceria-empty');
+            
+            let voceros = legisladoresData.filter(d => {
+                if(!d.prensa || d.prensa.length === 0) return false;
+                let inName = d.titular.toLowerCase().includes(sText);
+                let inPrensa = d.prensa.some(p => p.toLowerCase().includes(sText));
+                return inName || inPrensa;
+            });
 
-            if (data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500 font-medium">No se encontraron registros para esta búsqueda.</td></tr>`;
+            container.innerHTML = '';
+            
+            if(voceros.length === 0) {
+                emptyMsg.classList.remove('hidden');
                 return;
             }
-
-            // 4. Agrupación y Renderizado
-            if (!groupByState) {
-                // Render Normal
-                data.forEach(row => tableBody.appendChild(createTableRow(row)));
-            } else {
-                // Render Agrupado (y cruzado)
-                const grouped = {};
-                data.forEach(item => {
-                    const gKey = item[groupByState] || 'Sin asignar';
-                    if(!grouped[gKey]) grouped[gKey] = [];
-                    grouped[gKey].push(item);
-                });
-
-                Object.keys(grouped).sort().forEach(gKey => {
-                    // Fila cabecera del grupo
-                    const groupTr = document.createElement('tr');
-                    groupTr.className = 'bg-gray-100/80 border-y border-gray-200';
-                    groupTr.innerHTML = `
-                        <td colspan="7" class="py-2.5 px-4 text-sm font-bold text-gray-800">
-                            <span class="capitalize">${groupByState}</span>: ${gKey} 
-                            <span class="text-gray-500 font-normal ml-2 text-xs bg-gray-200 px-2 py-0.5 rounded-full">${grouped[gKey].length} reg.</span>
-                        </td>
-                    `;
-                    tableBody.appendChild(groupTr);
-
-                    if (crossByState && crossByState !== groupByState) {
-                        const crossed = {};
-                        grouped[gKey].forEach(item => {
-                            const cKey = item[crossByState] || 'Sin asignar';
-                            if(!crossed[cKey]) crossed[cKey] = [];
-                            crossed[cKey].push(item);
-                        });
-                        Object.keys(crossed).sort().forEach(cKey => {
-                            const subTr = document.createElement('tr');
-                            subTr.className = 'bg-gray-50/50 border-y border-gray-100';
-                            subTr.innerHTML = `
-                                <td colspan="7" class="py-2 px-4 pl-8 text-xs font-semibold text-gray-600">
-                                    ↳ <span class="capitalize">${crossByState}</span>: ${cKey}
-                                    <span class="text-gray-400 font-normal ml-1">(${crossed[cKey].length})</span>
-                                </td>
-                            `;
-                            tableBody.appendChild(subTr);
-                            crossed[cKey].forEach(row => {
-                                const tr = createTableRow(row);
-                                tr.querySelector('td').classList.add('pl-10'); // Sangría visual
-                                tableBody.appendChild(tr);
-                            });
-                        });
-                    } else {
-                        grouped[gKey].forEach(row => {
-                            const tr = createTableRow(row);
-                            tableBody.appendChild(tr);
-                        });
+            
+            emptyMsg.classList.add('hidden');
+            
+            voceros.forEach((d, i) => {
+                let ul = d.prensa.slice(0,3).map(p => {
+                    let parts = p.split(':');
+                    if(parts.length > 1) {
+                        return `<li class="mb-2"><span class="text-[10px] font-black text-slate-400 uppercase mr-1">${parts[0]}:</span> <span class="text-xs text-slate-700 font-medium leading-tight">${parts.slice(1).join(':')}</span></li>`;
                     }
-                });
-            }
-        }
+                    return `<li class="mb-2 text-xs text-slate-700 font-medium leading-tight">${p}</li>`;
+                }).join('');
+                
+                let extra = d.prensa.length > 3 ? `<div class="text-[10px] text-blue-600 font-bold mt-2">+ ${d.prensa.length - 3} declaraciones más (Clic para ver)</div>` : '';
+                const imgHTML = getImgTag(d.fotoTitular, d.titular, "w-12 h-12", "rounded-lg border-2 shadow-sm mr-4", d.color);
 
-        function createTableRow(row) {
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-blue-50/50 transition-colors';
-            
-            // Etiqueta de color para partido y cargo
-            const partyLabel = `
-                <div class="flex flex-col">
-                    <div class="flex items-center">
-                        <div class="w-2.5 h-2.5 rounded-full mr-2 shadow-sm" style="background-color: ${row.color}"></div>
-                        <span class="font-bold text-gray-700">${row.partido}</span>
-                    </div>
-                    ${row.cargo && row.cargo !== 'Legislador' ? `<span class="text-[10px] text-gray-400 uppercase font-bold mt-0.5 tracking-wider">${row.cargo}</span>` : ''}
-                </div>
-            `;
-
-            // Avatar en Tabla Titular
-            const avatarTitular = row.fotoTitular ? row.fotoTitular : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.titular)}&background=f1f5f9&color=64748b&size=64`;
-            
-            // Avatar en Tabla Suplente
-            let suplenteCell = `<span class="text-gray-400 italic font-normal">No registrado</span>`;
-            if (row.suplente && row.suplente.toLowerCase() !== 'no registrado' && row.suplente.toLowerCase() !== 'n/a') {
-                const avatarSuplente = row.fotoSuplente ? row.fotoSuplente : `https://ui-avatars.com/api/?name=${encodeURIComponent(row.suplente)}&background=f8fafc&color=94a3b8&size=64`;
-                suplenteCell = `
-                    <div class="flex items-center gap-3">
-                        <img src="${avatarSuplente}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(row.suplente)}&background=f8fafc&color=94a3b8&size=64'" class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white opacity-90" alt="Foto Suplente">
-                        <span class="font-medium text-gray-600">${row.suplente}</span>
+                let card = `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md cursor-pointer transition-shadow animate-fade" style="animation-delay: ${i*0.05}s;" onclick="showModal(legisladoresData.find(x => x.id === '${d.id}'))">
+                        <div class="flex items-center mb-4">
+                            ${imgHTML}
+                            <div>
+                                <h4 class="font-black text-slate-800 leading-tight">${d.titular}</h4>
+                                <div class="text-[10px] font-bold uppercase tracking-widest mt-1" style="color: ${d.color};">${d.partido} • ${d.camara}</div>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 h-32 overflow-hidden relative">
+                            <ul class="list-none">${ul}</ul>
+                            ${extra}
+                            <div class="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-slate-50 to-transparent"></div>
+                        </div>
                     </div>
                 `;
-            }
+                container.innerHTML += card;
+            });
+        }
 
-            tr.innerHTML = `
-                <td class="p-3 text-gray-600 font-medium">${row.departamento}</td>
-                <td class="p-3"><span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-bold uppercase">${row.camara}</span></td>
-                <td class="p-3 text-gray-600 font-medium">${row.circunscripcion}</td>
-                <td class="p-3">
-                    <div class="flex items-center gap-3">
-                        <img src="${avatarTitular}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(row.titular)}&background=f1f5f9&color=64748b&size=64'" class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm shrink-0 bg-white" alt="Foto Titular">
-                        <span class="font-bold text-gray-900">${row.titular}</span>
+        function renderIntensidad() {
+            d3.select("#chart-intensidad").selectAll("*").remove();
+            
+            let activeData = legisladoresData; 
+            let totalSeats = activeData.length;
+            if(totalSeats===0) return;
+
+            let partyMap = new Map();
+            activeData.forEach(leg => {
+                if (!partyMap.has(leg.partido)) {
+                    partyMap.set(leg.partido, { partido: leg.partido, count: 0, color: leg.color, order: leg.order, miembros: [] });
+                }
+                partyMap.get(leg.partido).count++;
+                partyMap.get(leg.partido).miembros.push(leg);
+            });
+            const chartData = [...partyGroups = Array.from(partyMap.values())].sort((a, b) => a.order - b.order);
+            
+            const width = 600, height = 350;
+            const svg = d3.select("#chart-intensidad").append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`).attr("preserveAspectRatio", "xMidYMid meet").append("g").attr("transform", `translate(${width / 2}, ${height - 20})`); 
+
+            const points = getParliamentPoints(totalSeats, 5, 100, 260);
+            let seatIndex = 0; const mappedPoints = [];
+            chartData.forEach(party => { party.miembros.forEach(miembro => { if (seatIndex < points.length) { mappedPoints.push({...points[seatIndex], ...miembro}); seatIndex++; } }); });
+
+            const tooltip = d3.select("#tooltip");
+            
+            svg.selectAll("circle").data(mappedPoints).enter().append("circle")
+                .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 7)
+                .attr("fill", d => d.color)
+                .attr("opacity", d => Math.max(0.15, d.alineacion / 100))
+                .style("cursor", "pointer")
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("stroke", "#0f172a").attr("stroke-width", 2);
+                    tooltip.transition().duration(150).style("opacity", 1);
+                    tooltip.html(`
+                        <div class="px-3 py-2 text-center">
+                            <div class="font-black text-slate-800">${d.titular}</div>
+                            <div class="text-xs text-slate-500 mb-2">${d.partido}</div>
+                            <div class="text-sm font-bold text-blue-600">Alineación: ${d.alineacion}%</div>
+                        </div>
+                    `).style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 30) + "px");
+                }).on("mouseout", function() {
+                    d3.select(this).attr("stroke", "none");
+                    tooltip.transition().duration(150).style("opacity", 0);
+                })
+                .on("click", function(event, d) {
+                    showModal(d);
+                });
+        }
+
+        function runSmartSimulation() {
+            legisladoresData.forEach(l => {
+                let rand = Math.random() * 100;
+                if (l.alineacion >= 80) {
+                    simulationState[l.id] = rand < 88 ? 'favor' : (rand < 96 ? 'abs' : 'contra');
+                } else if (l.alineacion >= 50) {
+                    simulationState[l.id] = rand < 50 ? 'favor' : (rand < 80 ? 'contra' : 'abs');
+                } else {
+                    simulationState[l.id] = rand < 65 ? 'contra' : (rand < 90 ? 'abs' : 'favor');
+                }
+            });
+            renderSimulacionChart();
+            renderSimulacionBase();
+        }
+
+        function renderSimulacionBase() {
+            let pContainer = document.getElementById("sim-party-controls");
+            pContainer.innerHTML = '';
+            
+            let pCounts = {};
+            legisladoresData.forEach(l => pCounts[l.partido] = (pCounts[l.partido] || 0) + 1);
+            let pSorted = Object.keys(pCounts).sort((a,b) => pCounts[b] - pCounts[a]);
+
+            pSorted.forEach(p => {
+                let color = getPartyColor(p);
+                pContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100">
+                        <span class="text-xs font-bold truncate w-24" style="color:${color}">${p}</span>
+                        <div class="flex space-x-1">
+                            <button onclick="voteBlock('${p}', 'favor')" class="w-8 h-6 bg-green-100 hover:bg-green-500 hover:text-white rounded text-[10px] font-bold text-green-700 transition-colors">FAV</button>
+                            <button onclick="voteBlock('${p}', 'contra')" class="w-8 h-6 bg-red-100 hover:bg-red-500 hover:text-white rounded text-[10px] font-bold text-red-700 transition-colors">CON</button>
+                            <button onclick="voteBlock('${p}', 'abs')" class="w-8 h-6 bg-slate-200 hover:bg-slate-500 hover:text-white rounded text-[10px] font-bold text-slate-700 transition-colors">ABS</button>
+                        </div>
                     </div>
-                </td>
-                <td class="p-3">${suplenteCell}</td>
-                <td class="p-3">${partyLabel}</td>
-                <td class="p-3 text-gray-600 truncate max-w-[150px]" title="${row.comision}">${row.comision}</td>
-            `;
-            return tr;
+                `;
+            });
         }
 
-        // --- LÓGICA DEL MODAL ---
-        function openLegislatorModal(data) {
-            // Configurar colores y etiquetas base
-            const color = data.displayColor || data.color;
-            document.getElementById('modal-color-band').style.backgroundColor = color;
-            document.getElementById('modal-icon-titular').style.backgroundColor = color;
-            
-            document.getElementById('modal-badge-camara').textContent = data.camara;
-            
-            const badgePartido = document.getElementById('modal-badge-partido');
-            badgePartido.textContent = data.partido;
-            badgePartido.style.color = color;
-            badgePartido.style.borderColor = color;
-            badgePartido.style.backgroundColor = color + '15'; // 15 es opacidad en HEX (aprox 8%)
-            
-            document.getElementById('modal-badge-depto').textContent = data.departamento;
+        function voteBlock(partido, type) {
+            legisladoresData.filter(l => l.partido === partido).forEach(l => {
+                simulationState[l.id] = type;
+            });
+            renderSimulacionChart();
+        }
 
-            // Datos del Titular
-            document.getElementById('modal-nombre-titular').textContent = data.titular;
-            document.getElementById('modal-cargo-titular').textContent = data.cargo || 'Legislador Titular';
-            document.getElementById('modal-rol-titular').textContent = data.cargo && data.cargo !== 'Legislador' ? 'Autoridad / Titular' : 'Titular';
-            document.getElementById('modal-foto-titular').src = data.fotoTitular ? data.fotoTitular : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.titular)}&background=f1f5f9&color=64748b&size=256`;
-            // Fallback de imagen en caso de error de carga
-            document.getElementById('modal-foto-titular').onerror = function() {
-                this.onerror = null;
-                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.titular)}&background=f1f5f9&color=64748b&size=256`;
-            };
+        function renderSimulacionChart() {
+            let vF = 0, vC = 0, vA = 0;
+            Object.values(simulationState).forEach(v => {
+                if(v==='favor') vF++; else if(v==='contra') vC++; else vA++;
+            });
+            document.getElementById('sim-count-favor').textContent = vF;
+            document.getElementById('sim-count-contra').textContent = vC;
+            document.getElementById('sim-count-abs').textContent = vA;
 
-            // Datos del Suplente
-            const nameSuplente = document.getElementById('modal-nombre-suplente');
-            const imgSuplente = document.getElementById('modal-foto-suplente');
+            let badge = document.getElementById('sim-result-badge');
+            if(vF > (vC+vA)) { badge.textContent = "Aprobado"; badge.className = "px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider bg-green-100 text-green-700"; }
+            else { badge.textContent = "Rechazado"; badge.className = "px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider bg-red-100 text-red-700"; }
+
+            d3.select("#chart-simulacion").selectAll("*").remove();
+            const totalSeats = legisladoresData.length;
+            if(totalSeats===0) return;
+            const width = 600, height = 350;
+            const svg = d3.select("#chart-simulacion").append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`).attr("preserveAspectRatio", "xMidYMid meet").append("g").attr("transform", `translate(${width / 2}, ${height - 20})`); 
             
-            if (data.suplente && data.suplente.toLowerCase() !== 'no registrado' && data.suplente.toLowerCase() !== 'n/a') {
-                nameSuplente.textContent = data.suplente;
-                nameSuplente.classList.remove('italic', 'text-gray-400');
-                nameSuplente.classList.add('text-gray-700');
-                imgSuplente.src = data.fotoSuplente ? data.fotoSuplente : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.suplente)}&background=f8fafc&color=94a3b8&size=256`;
-                imgSuplente.onerror = function() {
-                    this.onerror = null;
-                    this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.suplente)}&background=f8fafc&color=94a3b8&size=256`;
-                };
+            let orderedData = [...legisladoresData].sort((a,b) => (fallbackData.find(f => f.partido === a.partido)?.order || 99) - (fallbackData.find(f => f.partido === b.partido)?.order || 99));
+
+            const points = getParliamentPoints(totalSeats, 5, 100, 260);
+            const tooltip = d3.select("#tooltip");
+            
+            svg.selectAll("circle").data(orderedData).enter().append("circle")
+                .attr("cx", (d,i) => points[i].x).attr("cy", (d,i) => points[i].y).attr("r", 7)
+                .attr("fill", d => {
+                    let v = simulationState[d.id];
+                    return v === 'favor' ? '#22c55e' : (v === 'contra' ? '#ef4444' : '#cbd5e1');
+                })
+                .attr("stroke", d => d.color) 
+                .attr("stroke-width", 2)
+                .style("cursor", "pointer")
+                .on("mouseover", function(event, d) {
+                    tooltip.transition().duration(150).style("opacity", 1);
+                    tooltip.html(`<div class="px-3 py-2 font-bold text-sm">${d.titular}<br><span class="text-xs" style="color:${d.color}">${d.partido} (Alineación: ${d.alineacion}%)</span></div>`).style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 10) + "px");
+                }).on("mouseout", () => tooltip.transition().style("opacity", 0))
+                .on("click", function(event, d) {
+                    let curr = simulationState[d.id];
+                    simulationState[d.id] = curr === 'abs' ? 'favor' : (curr === 'favor' ? 'contra' : 'abs');
+                    renderSimulacionChart(); 
+                });
+        }
+
+        function showModal(data) {
+            document.getElementById('modal-name').textContent = data.titular;
+            document.getElementById('modal-suplente').textContent = data.suplente;
+            document.getElementById('modal-depto').textContent = data.departamento;
+            document.getElementById('modal-circ').textContent = data.circunscripcion;
+            document.getElementById('modal-comision').textContent = data.comision;
+            document.getElementById('modal-role').textContent = data.cargo;
+            
+            document.getElementById('modal-party-badge').textContent = data.partido;
+            document.getElementById('modal-chamber-badge').textContent = data.camara.charAt(0).toUpperCase() + data.camara.slice(1);
+            
+            document.getElementById('modal-photo').innerHTML = getModalImgTag(data.fotoTitular, data.titular);
+            document.getElementById('modal-header').style.backgroundColor = data.color;
+
+            document.getElementById('modal-alineacion-txt').textContent = `${data.alineacion}%`;
+            const alBar = document.getElementById('modal-alineacion-bar');
+            alBar.style.width = `${data.alineacion}%`;
+            alBar.className = `h-2 rounded-full transition-all duration-500 ${data.alineacion >= 80 ? 'bg-emerald-500' : (data.alineacion >= 50 ? 'bg-amber-400' : 'bg-red-500')}`;
+
+            const prensaContainer = document.getElementById('modal-prensa-container');
+            const prensaList = document.getElementById('modal-prensa-list');
+            prensaList.innerHTML = '';
+            
+            if(data.prensa && data.prensa.length > 0) {
+                prensaContainer.classList.remove('hidden');
+                data.prensa.forEach(item => {
+                    let parts = item.split(':');
+                    let fecha = parts.length > 1 ? parts[0].trim() : "Histórico";
+                    let tema = parts.length > 1 ? parts.slice(1).join(':').trim() : item.trim();
+                    
+                    prensaList.innerHTML += `
+                        <div class="relative pl-6 md:pl-0 flex flex-col md:flex-row items-start group">
+                            <div class="absolute left-0 translate-x-[5px] md:translate-x-0 top-1.5 md:left-1/2 md:-ml-1.5 w-3 h-3 rounded-full border-2 border-white bg-blue-500 shadow-sm"></div>
+                            <div class="md:w-1/2 md:pr-8 md:text-right mb-1 md:mb-0">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-blue-500 bg-blue-50 px-2 py-0.5 rounded">${fecha}</span>
+                            </div>
+                            <div class="md:w-1/2 md:pl-8 pb-4">
+                                <p class="text-sm font-semibold text-slate-700 leading-snug">${tema}</p>
+                            </div>
+                        </div>
+                    `;
+                });
             } else {
-                nameSuplente.textContent = 'Sin suplente registrado';
-                nameSuplente.classList.add('italic', 'text-gray-400');
-                nameSuplente.classList.remove('text-gray-700');
-                imgSuplente.src = `https://ui-avatars.com/api/?name=Sin+Suplente&background=f8fafc&color=94a3b8&size=256`;
+                prensaContainer.classList.add('hidden');
             }
 
-            // Datos Adicionales
-            document.getElementById('modal-circunscripcion').textContent = data.circunscripcion || 'N/A';
-            document.getElementById('modal-comision').textContent = data.comision || 'Sin asignar';
-
-            // Mostrar Modal con animación
-            modalEl.classList.add('show');
-            document.body.style.overflow = 'hidden'; // Evitar scroll en el fondo
+            const modal = document.getElementById('perfil-modal');
+            modal.classList.remove('hidden');
+            void modal.offsetWidth;
+            modal.classList.remove('opacity-0');
+            modal.children[0].classList.add('modal-enter');
         }
 
-        function closeLegislatorModal() {
-            modalEl.classList.remove('show');
-            document.body.style.overflow = 'auto'; // Restaurar scroll
+        function closeModal() {
+            const modal = document.getElementById('perfil-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.children[0].classList.remove('modal-enter');
+            }, 300);
         }
 
-        // Cerrar modal haciendo clic fuera de la caja de contenido
-        modalEl.addEventListener('click', function(e) {
-            if (e.target === modalEl) {
-                closeLegislatorModal();
-            }
+        document.getElementById('perfil-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
         });
 
-        // Cerrar modal presionando la tecla Esc
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modalEl.classList.contains('show')) {
-                closeLegislatorModal();
-            }
-        });
-
-        window.onload = () => {
-            updateSortIcons();
-            loadData();
-        };
-
+        window.onload = loadData;
     </script>
 </body>
 </html>
