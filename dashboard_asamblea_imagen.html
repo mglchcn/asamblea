@@ -54,20 +54,6 @@
         .animate-slide { animation: slideUp 0.4s ease forwards; }
         .modal-enter { animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        .hotspot {
-            position: absolute;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            z-index: 10;
-        }
-        .hotspot:hover {
-            transform: translate(-50%, -50%) scale(1.6);
-            z-index: 20;
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
-        }
-        
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -134,6 +120,8 @@
                 </div>
             </div>
 
+
+
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="px-6 py-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                     <h3 class="text-lg font-bold text-slate-800">Composición Detallada por Fuerza Política / Partido</h3>
@@ -180,7 +168,6 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div class="lg:col-span-8 bg-transparent flex flex-col items-center justify-center relative min-h-[450px]">
                     <div id="chart" class="w-full h-full flex justify-center"></div>
-                    <div id="tooltip" class="tooltip"></div>
                 </div>
 
                 <div class="lg:col-span-4 flex flex-col justify-start pt-4 space-y-6">
@@ -334,6 +321,9 @@
         </div>
 
     </div>
+
+    <!-- Tooltip Global (Fuera de las pestañas para que funcione en cualquier vista) -->
+    <div id="tooltip" class="tooltip"></div>
 
     <!-- Modal de Perfil -->
     <div id="perfil-modal" role="dialog" aria-modal="true" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
@@ -538,6 +528,12 @@
                             let prensaRaw = getSafeCol(row, ["Prensa", "Voceria", "Declaraciones", "Historial Prensa", "vocería"], "");
                             let prensaList = prensaRaw.split(/\||\n/).filter(x => x.trim().length > 0).map(x => x.trim());
 
+                            // Extraemos las coordenadas desde Google Sheets (si están vacías, serán nulas)
+                            let coordXRaw = getRawCol(row, ["Coord X", "X", "Posicion X", "Hotspot X"], "");
+                            let coordYRaw = getRawCol(row, ["Coord Y", "Y", "Posicion Y", "Hotspot Y"], "");
+                            let cX = parseFloat(coordXRaw);
+                            let cY = parseFloat(coordYRaw);
+
                             let dataObj = {
                                 id: 'leg_' + i,
                                 titular: titular,
@@ -550,11 +546,13 @@
                                 cargo: getSafeCol(row, ["Cargo", "Rol", "Funcion"], "Legislador"),
                                 color: getPartyColor(partido),
                                 alineacion: alineacion,
-                                // Foto urls se obtienen raw, pero se escapan al renderizar el <img>
-                                fotoTitular: buildPhotoUrl(getRawCol(row, ["Foto Titular", "Foto", "Fotografía", "Link Foto", "Imagen"], "")),
-                                fotoSuplente: buildPhotoUrl(getRawCol(row, ["Foto Suplente"], "")),
+                                fotoTitular: buildPhotoUrl(getSafeCol(row, ["Foto Titular", "Foto", "Fotografía", "Link Foto", "Imagen"], "")),
+                                fotoSuplente: buildPhotoUrl(getSafeCol(row, ["Foto Suplente"], "")),
                                 prensa: prensaList,
-                                order: fallbackData.find(f => f.partido === partido)?.order || 99
+                                order: fallbackData.find(f => f.partido === partido)?.order || 99,
+                                // Guardamos las coordenadas en el objeto
+                                coordX: isNaN(cX) ? null : cX,
+                                coordY: isNaN(cY) ? null : cY
                             };
 
                             legisladoresData.push(dataObj);
@@ -568,10 +566,10 @@
                         
                         updateDashboard();
                         renderEjecutivo();
-                        renderImageMap(); // Actualizando el renderizado del mapa
                         renderDirectorio();
                         renderVoceria();
                         runSmartSimulation();
+                        renderImageMap(); // Ejecutar el mapa de la imagen
 
                     } catch (e) {
                         console.error("Error parseando CSV", e);
@@ -591,18 +589,18 @@
             legisladoresData = [];
             fallbackData.forEach(p => {
                 for(let i=0; i<p.diputados; i++){
-                    legisladoresData.push({ id:`f_d_${p.partido}_${i}`, titular: `Diputado ${p.partido} ${i+1}`, partido: p.partido, camara: "diputados", departamento: "La Paz", circunscripcion: `C-${i+1}`, comision:"Constitución", cargo: i===0?"Jefe de Bancada":"Legislador", color: getPartyColor(p.partido), alineacion: Math.floor(70+(Math.random()*30)), prensa: ["01/01/2026: Entrevista en TV", "05/02/2026: Rueda de Prensa"], fotoTitular: null });
+                    legisladoresData.push({ id:`f_d_${p.partido}_${i}`, titular: `Diputado ${p.partido} ${i+1}`, partido: p.partido, camara: "diputados", departamento: "La Paz", circunscripcion: `C-${i+1}`, comision:"Constitución", cargo: i===0?"Jefe de Bancada":"Legislador", color: getPartyColor(p.partido), alineacion: 70+(Math.random()*30), prensa: ["01/01/2026: Entrevista en TV", "05/02/2026: Rueda de Prensa"], fotoTitular: null, coordX: 40 + (Math.random()*20), coordY: 50 + (Math.random()*30) });
                 }
                 for(let i=0; i<p.senadores; i++){
-                    legisladoresData.push({ id:`f_s_${p.partido}_${i}`, titular: `Senador ${p.partido} ${i+1}`, partido: p.partido, camara: "senadores", departamento: "Santa Cruz", circunscripcion: "Lista Depto", comision:"Economía", cargo: "Legislador", color: getPartyColor(p.partido), alineacion: 85, prensa:[], fotoTitular: null });
+                    legisladoresData.push({ id:`f_s_${p.partido}_${i}`, titular: `Senador ${p.partido} ${i+1}`, partido: p.partido, camara: "senadores", departamento: "Santa Cruz", circunscripcion: "Lista Depto", comision:"Economía", cargo: "Legislador", color: getPartyColor(p.partido), alineacion: 85, prensa:[], fotoTitular: null, coordX: 10 + (Math.random()*80), coordY: 50 + (Math.random()*30) });
                 }
             });
             updateDashboard();
             renderEjecutivo();
-            renderImageMap(); // Actualizando el renderizado del mapa fallback
             renderDirectorio();
             renderVoceria();
             runSmartSimulation();
+            renderImageMap(); // Ejecutar el mapa de la imagen en modo offline
         }
 
         function populateSelects(comisiones, partidos, deptos) {
@@ -716,100 +714,7 @@
                     </tr>
                 `;
             });
-        }
-
-        function renderImageMap() {
-            const container = document.getElementById('image-hotspots');
-            const tooltip = document.getElementById('tooltip');
-            if (!container) return;
-            container.innerHTML = '';
-            
-            // Coordenadas calculadas visualmente en porcentajes {X, Y} para la imagen asamblea2.jfif
-            const seatCoordinates = [
-                // Directiva (Mesa central superior)
-                {x: 44, y: 44.5}, {x: 46.5, y: 44.5}, {x: 49, y: 44.5}, {x: 51.5, y: 44.5}, {x: 54, y: 44.5}, {x: 56.5, y: 44.5},
-                // Bloque Izquierdo Extremo (Rojo/Guindo)
-                {x: 10, y: 64}, {x: 13, y: 70}, {x: 17, y: 76}, {x: 23, y: 84}, {x: 17, y: 55}, {x: 21, y: 62}, {x: 25, y: 69}, {x: 30, y: 77},
-                // Bloque Central-Izquierdo (Verde)
-                {x: 35, y: 82}, {x: 41, y: 85}, {x: 40, y: 74}, {x: 45, y: 77}, {x: 32, y: 68}, {x: 38, y: 65}, {x: 28, y: 58},
-                // Bloque Central-Derecho (Verde)
-                {x: 59, y: 85}, {x: 65, y: 82}, {x: 55, y: 77}, {x: 60, y: 74}, {x: 62, y: 65}, {x: 68, y: 68}, {x: 72, y: 58},
-                // Bloque Derecho Extremo (Amarillo/Azul)
-                {x: 77, y: 84}, {x: 83, y: 76}, {x: 87, y: 70}, {x: 90, y: 64}, {x: 70, y: 77}, {x: 75, y: 69}, {x: 79, y: 62}, {x: 83, y: 55}
-            ];
-
-            // Limitamos a la cantidad de coordenadas disponibles para el prototipo
-            const mappedLegisladores = legisladoresData.slice(0, seatCoordinates.length);
-
-            mappedLegisladores.forEach((leg, index) => {
-                const coord = seatCoordinates[index];
-                if (!coord) return;
-                
-                const hotspot = document.createElement('div');
-                hotspot.className = 'hotspot border-[1.5px] border-white/90 shadow-sm backdrop-blur-sm';
-                hotspot.style.left = `${coord.x}%`;
-                hotspot.style.top = `${coord.y}%`;
-                
-                // Ajuste responsivo de tamaño en base al viewport (opcional, pero útil)
-                hotspot.style.width = window.innerWidth < 768 ? '10px' : '14px';
-                hotspot.style.height = window.innerWidth < 768 ? '10px' : '14px';
-                hotspot.style.backgroundColor = leg.color;
-                
-                hotspot.addEventListener('mouseenter', (e) => {
-                    const avatarHTML = getImgTag(leg.fotoTitular, leg.titular, "w-16 h-16", "rounded-full shadow-sm border-2 border-white absolute -top-8 left-1/2 transform -translate-x-1/2");
-                    
-                    tooltip.innerHTML = `
-                        <div class="relative pt-10 pb-4 px-5 text-center">
-                            ${avatarHTML}
-                            <div class="text-[9px] font-black uppercase tracking-widest mb-1 mt-1 text-slate-400">${escapeHTML(leg.cargo)}</div>
-                            <div class="font-black text-slate-800 text-base leading-tight mb-0.5">${escapeHTML(leg.titular)}</div>
-                            <div class="text-xs font-semibold" style="color: ${leg.color};">${escapeHTML(leg.partido)} • <span class="uppercase">${escapeHTML(leg.camara)}</span></div>
-                        </div>
-                    `;
-                    
-                    tooltip.style.transition = 'opacity 0.15s ease-in-out';
-                    tooltip.style.opacity = '1';
-                    
-                    // Cálculo inteligente para que el tooltip no se salga de la pantalla al hacer hover sobre la imagen
-                    let left = e.pageX - 125; 
-                    let top = e.pageY - 160;
-                    if (left < 10) left = 10;
-                    if (left + 250 > window.innerWidth) left = window.innerWidth - 260;
-                    if (top < window.scrollY + 10) top = e.pageY + 20; 
-                    
-                    tooltip.style.left = left + "px";
-                    tooltip.style.top = top + "px";
-                });
-                
-                hotspot.addEventListener('mousemove', (e) => {
-                    let left = e.pageX - 125; 
-                    let top = e.pageY - 160;
-                    if (left < 10) left = 10;
-                    if (left + 250 > window.innerWidth) left = window.innerWidth - 260;
-                    if (top < window.scrollY + 10) top = e.pageY + 20; 
-                    tooltip.style.left = left + "px";
-                    tooltip.style.top = top + "px";
-                });
-
-                hotspot.addEventListener('mouseleave', () => {
-                    tooltip.style.opacity = '0';
-                });
-
-                hotspot.addEventListener('click', () => {
-                    tooltip.style.opacity = '0';
-                    showModal(leg); // Abre el modal de Google Sheets
-                });
-
-                container.appendChild(hotspot);
-            });
-        }
-
-        // --- Utilidades previas de prevención de XSS ---
-        function escapeHTML(str) {
-            if (str === null || str === undefined) return '';
-            return String(str).replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-            });
+            tbody.innerHTML = htmlContent;
         }
 
         function getParliamentPoints(totalSeats, numRows, innerRadius, outerRadius) {
@@ -1385,6 +1290,95 @@
                     simulationState[d.id] = curr === 'abs' ? 'favor' : (curr === 'favor' ? 'contra' : 'abs');
                     renderSimulacionChart(); 
                 });
+        }
+
+        function renderImageMap() {
+            const container = document.getElementById('image-hotspots');
+            const tooltip = document.getElementById('tooltip');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            /* HERRAMIENTA DE ADMINISTRADOR: 
+               Haz "Alt + Click" en la imagen para obtener las coordenadas */
+            const imgContainer = document.getElementById('hemiciclo-image-container');
+            // Removemos listeners previos para evitar duplicados al recargar
+            const newImgContainer = imgContainer.cloneNode(true);
+            imgContainer.parentNode.replaceChild(newImgContainer, imgContainer);
+            
+            newImgContainer.addEventListener('click', function(e) {
+                if(e.altKey && e.target.tagName === 'IMG') {
+                    const rect = this.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    const msg = `Coordenadas exactas:\nCoord X: ${x.toFixed(2)}\nCoord Y: ${y.toFixed(2)}\n\nPega estos valores en tu Google Sheet.`;
+                    alert(msg);
+                    console.log(msg);
+                }
+            });
+
+            // Volvemos a obtener el contenedor de hotspots ya que reemplazamos el padre
+            const hotspotsContainer = document.getElementById('image-hotspots');
+
+            // Filtramos solo los legisladores que tengan coordenadas configuradas en el Excel
+            const legisladoresConCoordenadas = legisladoresData.filter(leg => leg.coordX !== null && leg.coordY !== null);
+
+            legisladoresConCoordenadas.forEach((leg) => {
+                const hotspot = document.createElement('div');
+                hotspot.className = 'absolute rounded-full cursor-pointer border-[1.5px] border-white/90 shadow-md backdrop-blur-sm z-10 transition-transform duration-200 hover:scale-150';
+                hotspot.style.left = `${leg.coordX}%`;
+                hotspot.style.top = `${leg.coordY}%`;
+                hotspot.style.transform = 'translate(-50%, -50%)'; 
+                
+                hotspot.style.width = window.innerWidth < 768 ? '10px' : '14px';
+                hotspot.style.height = window.innerWidth < 768 ? '10px' : '14px';
+                hotspot.style.backgroundColor = leg.color;
+                
+                hotspot.addEventListener('mouseenter', (e) => {
+                    const avatarHTML = getImgTag(leg.fotoTitular, leg.titular, "w-16 h-16", "rounded-full shadow-sm border-2 border-white absolute -top-8 left-1/2 transform -translate-x-1/2");
+                    
+                    tooltip.innerHTML = `
+                        <div class="relative pt-10 pb-4 px-5 text-center">
+                            ${avatarHTML}
+                            <div class="text-[9px] font-black uppercase tracking-widest mb-1 mt-1 text-slate-400">${escapeHTML(leg.cargo)}</div>
+                            <div class="font-black text-slate-800 text-base leading-tight mb-0.5">${escapeHTML(leg.titular)}</div>
+                            <div class="text-xs font-semibold" style="color: ${leg.color};">${escapeHTML(leg.partido)} • <span class="uppercase">${escapeHTML(leg.camara)}</span></div>
+                        </div>
+                    `;
+                    
+                    tooltip.style.transition = 'opacity 0.15s ease-in-out';
+                    tooltip.style.opacity = '1';
+                    
+                    let left = e.pageX - 125; 
+                    let top = e.pageY - 160;
+                    if (left < 10) left = 10;
+                    if (left + 250 > window.innerWidth) left = window.innerWidth - 260;
+                    if (top < window.scrollY + 10) top = e.pageY + 20; 
+                    
+                    tooltip.style.left = left + "px";
+                    tooltip.style.top = top + "px";
+                });
+                
+                hotspot.addEventListener('mousemove', (e) => {
+                    let left = e.pageX - 125; 
+                    let top = e.pageY - 160;
+                    if (left < 10) left = 10;
+                    if (left + 250 > window.innerWidth) left = window.innerWidth - 260;
+                    if (top < window.scrollY + 10) top = e.pageY + 20; 
+                    tooltip.style.left = left + "px";
+                    tooltip.style.top = top + "px";
+                });
+
+                hotspot.addEventListener('mouseleave', () => {
+                    tooltip.style.opacity = '0';
+                });
+
+                hotspot.addEventListener('click', () => {
+                    tooltip.style.opacity = '0';
+                    showModal(leg); 
+                });
+
+                hotspotsContainer.appendChild(hotspot);
+            });
         }
 
         function showModal(data) {
