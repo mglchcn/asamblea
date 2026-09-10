@@ -114,7 +114,7 @@
                 </div>
                 <!-- Contenedor Relativo Crítico para el Mapeo -->
                 <div class="relative w-full overflow-hidden bg-slate-900 group select-none" id="hemiciclo-image-container">
-                    <img src="asamblea2.jpg" alt="Vista interior de la Asamblea Legislativa" class="w-full h-auto object-cover opacity-90 transition-opacity duration-500">
+                    <img src="asamblea2_2.jfif" alt="Vista interior de la Asamblea Legislativa" class="w-full h-auto object-cover opacity-90 transition-opacity duration-500">
                     <!-- Capa donde se inyectarán los marcadores dinámicos vía JavaScript -->
                     <div id="image-hotspots" class="absolute inset-0 w-full h-full"></div>
                 </div>
@@ -1306,13 +1306,49 @@
             imgContainer.parentNode.replaceChild(newImgContainer, imgContainer);
             
             newImgContainer.addEventListener('click', function(e) {
-                if(e.altKey && e.target.tagName === 'IMG') {
+                if(e.altKey) {
+                    // Prevenimos otros clicks
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     const rect = this.getBoundingClientRect();
                     const x = ((e.clientX - rect.left) / rect.width) * 100;
                     const y = ((e.clientY - rect.top) / rect.height) * 100;
-                    const msg = `Coordenadas exactas:\nCoord X: ${x.toFixed(2)}\nCoord Y: ${y.toFixed(2)}\n\nPega estos valores en tu Google Sheet.`;
-                    alert(msg);
-                    console.log(msg);
+                    
+                    // Copiar al portapapeles usando execCommand (Funciona en iFrames)
+                    const textToCopy = `${x.toFixed(2)}\t${y.toFixed(2)}`;
+                    const tempInput = document.createElement("input");
+                    document.body.appendChild(tempInput);
+                    tempInput.value = textToCopy;
+                    tempInput.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(tempInput);
+
+                    // Notificación flotante personalizada sin usar alert()
+                    let toast = document.getElementById('admin-toast');
+                    if (!toast) {
+                        toast = document.createElement('div');
+                        toast.id = 'admin-toast';
+                        toast.className = 'fixed bottom-6 right-6 bg-slate-800 text-white p-5 rounded-xl shadow-2xl z-[100] animate-slide border border-slate-700 transition-opacity duration-300';
+                        document.body.appendChild(toast);
+                    }
+                    
+                    toast.innerHTML = `
+                        <div class="font-black text-lg mb-1 text-emerald-400 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            ¡Copiado al Portapapeles!
+                        </div>
+                        <div class="text-sm font-medium mb-1 mt-3">Coord X: <span class="font-mono text-emerald-300 ml-1">${x.toFixed(2)}</span></div>
+                        <div class="text-sm font-medium mb-3">Coord Y: <span class="font-mono text-emerald-300 ml-1">${y.toFixed(2)}</span></div>
+                        <div class="text-xs text-slate-400 border-t border-slate-700 pt-2">Puede pegarlas directamente (Ctrl+V) en su Google Sheet.</div>
+                    `;
+                    
+                    toast.style.opacity = '1';
+                    
+                    // Ocultar notificación luego de 4 segundos
+                    setTimeout(() => {
+                        toast.style.opacity = '0';
+                    }, 4000);
                 }
             });
 
