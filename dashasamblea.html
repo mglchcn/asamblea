@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head><script type="text/javascript" src="/___vscode_livepreview_injected_script"></script>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Integral - Asamblea Legislativa</title>
@@ -31,10 +31,9 @@
         .hotspot:hover { transform: scale(1.5) translate(-33%, -33%); z-index: 50; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center pb-12 relative">
+<body class="min-h-screen flex flex-col pb-12 relative">
 
     <div class="w-full bg-[#1b4332] relative overflow-hidden shadow-md sticky top-0 z-40">
-        <!-- Decoración curva estilo imagen -->
         <div class="absolute right-0 top-0 h-full w-1/3 opacity-20 pointer-events-none overflow-hidden">
             <div class="absolute right-[-10%] top-[-50%] w-64 h-64 rounded-full border-[20px] border-[#2d6a4f]/40"></div>
             <div class="absolute right-[5%] top-[-20%] w-96 h-96 rounded-full border-[40px] border-[#2d6a4f]/20"></div>
@@ -42,20 +41,15 @@
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="pt-5 pb-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                
-                <!-- Contenedor de Logos a la Izquierda -->
                 <div class="flex items-center gap-3 shrink-0">
-                    <!-- Logo Principal (CENGOB) -->
                     <div class="bg-white rounded-xl p-2 h-16 w-auto flex items-center justify-center shadow-sm">
                         <img src="cengoblogo.png" alt="Logo Principal" class="max-h-full object-contain">
                     </div>
-                    <!-- Logo Secundario -->
                     <div class="bg-white rounded-xl p-2 h-16 w-auto flex items-center justify-center shadow-sm">
                         <img src="Logo1.jpeg" alt="Logo Secundario" class="max-h-full object-contain">
                     </div>
                 </div>
                 
-                <!-- Títulos -->
                 <div class="flex-1 mt-2 sm:mt-0">
                     <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
                         <span class="text-white">Dashboard</span> <span class="text-amber-400">Legislativo</span>
@@ -65,30 +59,31 @@
             </div>
         </div>
         
-        <!-- Contenedor de Pestañas con fondo blanco -->
         <div class="w-full bg-white border-b border-slate-200 shadow-inner">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex overflow-x-auto hide-scrollbar pt-3 gap-6" role="tablist">
                     <button onclick="switchMainTab('ejecutivo')" id="tab-btn-ejecutivo" role="tab" aria-selected="true" class="main-tab active pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Dashboard Ejecutivo</button>
-                <button onclick="switchMainTab('hemiciclo')" id="tab-btn-hemiciclo" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vista Hemiciclo</button>
-                <button onclick="switchMainTab('directorio')" id="tab-btn-directorio" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Directorio (Tabla)</button>
-                <button onclick="switchMainTab('voceria')" id="tab-btn-voceria" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vocería y Prensa</button>
-                <button onclick="switchMainTab('intensidad')" id="tab-btn-intensidad" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Intensidad / Alineación</button>
-                <button onclick="switchMainTab('simulacion')" id="tab-btn-simulacion" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Simulador de Leyes</button>
-                <button onclick="switchMainTab('interpelacion')" id="tab-btn-interpelacion" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Simulador Interpelaciones</button>
+                    <button onclick="switchMainTab('hemiciclo')" id="tab-btn-hemiciclo" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vista Hemiciclo</button>
+                    <button onclick="switchMainTab('directorio')" id="tab-btn-directorio" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Directorio (Tabla)</button>
+                    <button onclick="switchMainTab('voceria')" id="tab-btn-voceria" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vocería y Prensa</button>
+                    <button onclick="switchMainTab('intensidad')" id="tab-btn-intensidad" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Intensidad / Alineación</button>
+                    <button onclick="switchMainTab('simulacion')" id="tab-btn-simulacion" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Simulador de Leyes</button>
+                    <button onclick="switchMainTab('interpelacion')" id="tab-btn-interpelacion" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Simulador Interpelaciones</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-7xl w-full px-4 sm:px-6 lg:px-8 mt-6">
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         <div id="data-alert" class="hidden bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm flex items-center shadow-sm">
             <svg class="h-5 w-5 mr-3 flex-shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
             <span id="data-alert-text" class="font-medium">Sincronizando base de datos central...</span>
         </div>
     </div>
 
-    <div class="max-w-7xl w-full px-4 sm:px-6 lg:px-8 mt-6">
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         
+        <!-- Executive Dashboard View -->
         <div id="view-ejecutivo" class="view-section animate-fade block" role="tabpanel">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
@@ -111,8 +106,8 @@
                         <h3 class="text-lg font-bold text-slate-800">Mapa del Hemiciclo</h3>
                         <p class="text-xs text-slate-500 mt-1"> <b>Clic</b> en un legislador para ver su perfil detallado.</p>
                     </div>
-                    <div class="relative w-full overflow-hidden bg-slate-900 flex-1 flex items-center justify-center">
-                        <div class="relative w-full" style="display: inline-block;">
+                    <div class="relative w-full overflow-hidden bg-slate-900 flex-1 flex items-center justify-center p-4">
+                        <div class="relative w-full max-w-5xl mx-auto">
                             <img src="asamblea2.jpg" id="hemiciclo-img" class="w-full h-auto object-contain cursor-crosshair opacity-90 hover:opacity-100 transition-opacity" alt="Foto del Hemiciclo">
                             <div id="image-hotspots" class="absolute inset-0 pointer-events-none w-full h-full"></div>
                         </div>
@@ -140,21 +135,22 @@
             </div>
         </div>
 
+        <!-- Hemiciclo View -->
         <div id="view-hemiciclo" class="view-section animate-fade hidden" role="tabpanel">
-            <div class="flex flex-wrap items-center gap-3 mb-6 bg-white p-2 rounded-xl shadow-sm border border-slate-200 inline-flex">
+            <div class="flex flex-wrap items-center gap-3 mb-6 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
                 <button onclick="setChamber('diputados')" id="btn-diputados" class="chamber-btn active px-5 py-2.5 rounded-lg text-sm font-semibold transition-all">Diputados</button>
                 <button onclick="setChamber('diputados_suplentes')" id="btn-diputados_suplentes" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Diputados Suplentes</button>
                 <button onclick="setChamber('senadores')" id="btn-senadores" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Senadores</button>
                 <button onclick="setChamber('senadores_suplentes')" id="btn-senadores_suplentes" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Senadores Suplentes</button>
                 <button onclick="setChamber('supraestatales')" id="btn-supraestatales" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Supraestatales</button>
-                <div class="h-6 w-px bg-slate-200 mx-1"></div>
+                <div class="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
                 <button onclick="setChamber('jefes')" id="btn-jefes" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
                     Jefes de Bancada
                 </button>
-                <div class="ml-auto pl-2 flex items-center">
+                <div class="ml-auto pl-2 flex items-center w-full sm:w-auto mt-2 sm:mt-0">
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wide mr-2">Comisión:</label>
-                    <select id="comision-selector" onchange="applyComisionFilter()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-3 py-2 font-medium">
+                    <select id="comision-selector" onchange="applyComisionFilter()" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-3 py-2 font-medium w-full sm:w-auto">
                         <option value="todas">Todas las Comisiones</option>
                     </select>
                 </div>
@@ -188,6 +184,7 @@
             </div>
         </div>
 
+        <!-- Directorio Table View -->
         <div id="view-directorio" class="view-section animate-fade hidden" role="tabpanel">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -197,8 +194,6 @@
                     </div>
                     
                     <div class="flex gap-3 w-full md:w-auto overflow-visible pb-2 md:pb-0 flex-wrap md:flex-nowrap">
-                        
-                        <!-- Filtro Cámara (Multiselect) -->
                         <div class="relative custom-multiselect shrink-0">
                             <button id="btn-ms-camara" data-label="Cámara" onclick="toggleDropdown('ms-camara')" class="border border-slate-200 bg-white text-slate-700 text-sm rounded-lg px-3 py-2 font-medium flex items-center justify-between w-48 shadow-sm">
                                 <span id="btn-text-ms-camara" class="truncate">Cámara: Todas</span>
@@ -207,7 +202,6 @@
                             <div id="dd-ms-camara" class="multi-dropdown hidden absolute z-50 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1"></div>
                         </div>
 
-                        <!-- Filtro Departamento (Multiselect) -->
                         <div class="relative custom-multiselect shrink-0">
                             <button id="btn-ms-depto" data-label="Depto" onclick="toggleDropdown('ms-depto')" class="border border-slate-200 bg-white text-slate-700 text-sm rounded-lg px-3 py-2 font-medium flex items-center justify-between w-40 shadow-sm">
                                 <span id="btn-text-ms-depto" class="truncate">Depto: Todos</span>
@@ -216,7 +210,6 @@
                             <div id="dd-ms-depto" class="multi-dropdown hidden absolute z-50 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1"></div>
                         </div>
 
-                        <!-- Filtro Partido (Multiselect) -->
                         <div class="relative custom-multiselect shrink-0">
                             <button id="btn-ms-partido" data-label="Fuerza Política" onclick="toggleDropdown('ms-partido')" class="border border-slate-200 bg-white text-slate-700 text-sm rounded-lg px-3 py-2 font-medium flex items-center justify-between w-48 shadow-sm">
                                 <span id="btn-text-ms-partido" class="truncate">Fuerza Política: Todas</span>
@@ -225,7 +218,6 @@
                             <div id="dd-ms-partido" class="multi-dropdown hidden absolute z-50 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1 right-0 md:right-auto"></div>
                         </div>
 
-                        <!-- Agrupación (Se mantiene normal) -->
                         <select id="group-table" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium bg-slate-50 shrink-0 shadow-sm">
                             <option value="ninguno">Sin Agrupar</option>
                             <option value="partido">Agrupar por Partido</option>
@@ -254,7 +246,6 @@
                 </div>
                 <div id="table-empty" class="hidden text-center py-10 text-slate-500 font-medium text-sm">No se encontraron asambleístas con esos criterios.</div>
 
-                <!-- Cuadro Resumen -->
                 <div id="directorio-summary" class="mt-6 bg-slate-50/50 rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="flex items-center">
                         <div class="bg-blue-100 p-2 rounded-lg mr-3">
@@ -275,10 +266,10 @@
                         <div id="sum-parties" class="flex flex-wrap gap-1.5 text-[10px] font-bold"></div>
                     </div>
                 </div>
-
             </div>
         </div>
 
+        <!-- Vocería y Prensa View -->
         <div id="view-voceria" class="view-section animate-fade hidden" role="tabpanel">
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div>
@@ -298,6 +289,7 @@
             </div>
         </div>
 
+        <!-- Intensidad / Alineación View -->
         <div id="view-intensidad" class="view-section animate-fade hidden" role="tabpanel">
             <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center mb-6">
                 <h2 class="text-2xl font-black text-slate-800 mb-2">Mapa de Lealtad y Alineación</h2>
@@ -312,6 +304,7 @@
             </div>
         </div>
 
+        <!-- Simulador de Leyes View -->
         <div id="view-simulacion" class="view-section animate-fade hidden" role="tabpanel">
              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -351,6 +344,7 @@
              </div>
         </div>
 
+        <!-- Simulador Interpelaciones View -->
         <div id="view-interpelacion" class="view-section animate-fade hidden" role="tabpanel">
              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -391,10 +385,8 @@
 
     </div>
 
-    <!-- Tooltip Flotante Global (Funciona en SVG e Imagen) -->
     <div id="tooltip" class="tooltip"></div>
 
-    <!-- Modal de Perfil -->
     <div id="perfil-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div id="modal-header" class="px-6 py-4 flex justify-between items-center bg-slate-800 text-white">
@@ -447,7 +439,7 @@
                         <div class="mb-6">
                             <button onclick="toggleDetalles()" class="flex items-center justify-between w-full p-3.5 bg-white border border-slate-200 rounded-xl shadow-sm hover:bg-slate-50 transition-colors group">
                                 <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     <span class="text-sm font-bold text-slate-700 group-hover:text-blue-700 transition-colors">Más detalles y antecedentes</span>
                                 </div>
                                 <svg id="detalles-icon" class="w-5 h-5 text-slate-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -474,7 +466,6 @@
         </div>
     </div>
 
-    <!-- Toast Notification (Admin Coordinates) -->
     <div id="toast-notification" class="fixed bottom-4 right-4 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
         <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <div>
@@ -484,7 +475,6 @@
     </div>
 
     <script>
-        // XSS Sanitizer
         function escapeHTML(str) {
             return String(str).replace(/[&<>'"]/g, tag => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
@@ -511,7 +501,7 @@
         let currentChamber = 'diputados'; 
         let currentSort = { col: 'titular', asc: true };
         let simulationState = {};
-        let simulationStateInt = {}; // State for interpelaciones
+        let simulationStateInt = {};
 
         function getSafeCol(row, possibleNames, defaultVal = "") {
             const rowKeys = Object.keys(row);
@@ -544,7 +534,6 @@
             return "#94a3b8";
         }
 
-        // Image Generators
         function buildPhotoUrl(url) {
             if (!url) return null;
             let strUrl = String(url).trim();
@@ -586,7 +575,6 @@
             return `<img src="${safeAvatar}" class="${classStr}" alt="${safeName}">`;
         }
 
-        // Tooltip Positioning Logic
         function positionTooltip(event, tooltipNode) {
             const ttRect = tooltipNode.getBoundingClientRect();
             let left = event.pageX + 15;
@@ -749,7 +737,6 @@
             Array.from(comisiones).sort().forEach(c => cHtml += `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`);
             document.getElementById("comision-selector").innerHTML = cHtml;
 
-            // Construir multiselects personalizados
             if (partidos) buildMultiSelect('ms-partido', partidos);
             if (deptos) buildMultiSelect('ms-depto', deptos);
             if (camaras) buildMultiSelect('ms-camara', camaras);
@@ -774,7 +761,6 @@
             updateDashboard(); renderEjecutivo(); renderDirectorio(); renderVoceria(); runSmartSimulation(); runSmartInterpelacion(); renderImageMap();
         }
 
-        /* Funciones para Multiselect Personalizado */
         function toggleDropdown(id) {
             document.querySelectorAll('.multi-dropdown').forEach(d => {
                 if (d.id !== 'dd-' + id) d.classList.add('hidden');
@@ -782,7 +768,6 @@
             document.getElementById('dd-' + id).classList.toggle('hidden');
         }
 
-        // Cierra los dropdowns si se hace clic afuera
         document.addEventListener('click', (e) => {
             if(!e.target.closest('.custom-multiselect')) {
                 document.querySelectorAll('.multi-dropdown').forEach(d => d.classList.add('hidden'));
@@ -951,7 +936,6 @@
             let tbody = document.getElementById('table-body');
             let emptyMsg = document.getElementById('table-empty');
             
-            // Lógica del Cuadro Resumen
             let dipCount = 0, senCount = 0, supCount = 0;
             let partyCounts = {};
             
@@ -965,7 +949,6 @@
                 let currentGroup = null;
 
                 filtered.forEach(d => {
-                    // Contadores para resumen
                     if(d.camara === 'diputados') dipCount++;
                     else if(d.camara === 'senadores') senCount++;
                     else if(d.camara === 'supraestatales') supCount++;
@@ -1004,14 +987,12 @@
                 tbody.innerHTML = htmlContent;
             }
 
-            // Actualizar DOM del Resumen
             document.getElementById('sum-total').textContent = filtered.length;
             document.getElementById('sum-dip').textContent = dipCount;
             document.getElementById('sum-sen').textContent = senCount;
             document.getElementById('sum-sup').textContent = supCount;
             
             let pHtml = '';
-            // Ordenar partidos por cantidad
             let sortedParties = Object.keys(partyCounts).sort((a,b) => partyCounts[b] - partyCounts[a]);
             sortedParties.forEach(p => {
                 pHtml += `<span class="px-2.5 py-1 bg-white border border-slate-200 rounded-md shadow-sm uppercase tracking-wider" style="color:${getPartyColor(p)}">${p}: ${partyCounts[p]}</span>`;
@@ -1019,7 +1000,6 @@
             document.getElementById('sum-parties').innerHTML = pHtml;
         }
 
-        // Event Listeners (Actualizados)
         document.getElementById('search-table').addEventListener('keyup', renderDirectorio);
         document.getElementById('group-table').addEventListener('change', renderDirectorio);
 
@@ -1201,7 +1181,6 @@
         }
         function hideHotspotTooltip() { d3.select("#tooltip").transition().duration(150).style("opacity", 0); }
 
-        // Alt+Click Coordinate extraction
         document.getElementById('hemiciclo-img').addEventListener('click', function(e) {
             if (e.altKey) {
                 const rect = this.getBoundingClientRect();
@@ -1240,7 +1219,7 @@
             const tooltip = d3.select("#tooltip");
             svg.selectAll("circle").data(mappedPoints).enter().append("circle")
                 .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 7)
-                .attr("fill", "#006167") // All points monochromatic
+                .attr("fill", "#006167")
                 .attr("opacity", d => Math.max(0.1, d.alineacion / 100))
                 .style("cursor", "pointer")
                 .on("mouseover", function(event, d) {
@@ -1329,7 +1308,6 @@
             document.getElementById('int-count-censurado').textContent = vCen; document.getElementById('int-count-nocensurado').textContent = vNoCen; document.getElementById('int-count-confianza').textContent = vConf;
             let badge = document.getElementById('int-result-badge');
             
-            // Lógica para determinar el estado (se requieren 2/3 para censurar)
             const dosTercios = Math.ceil(legisladoresData.length * (2/3));
             if(vCen >= dosTercios) { 
                 badge.textContent = "Censurado (2/3)"; 
@@ -1376,7 +1354,6 @@
             document.getElementById('modal-info-titular').textContent = data.infoTitular;
             document.getElementById('modal-info-suplente').textContent = data.infoSuplente;
             
-            // Reset collapse state when opening modal
             document.getElementById('modal-detalles').classList.add('hidden');
             document.getElementById('detalles-icon').classList.remove('rotate-180');
 
