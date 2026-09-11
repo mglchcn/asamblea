@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -33,15 +34,39 @@
 </head>
 <body class="min-h-screen flex flex-col items-center pb-12 relative">
 
-    <div class="w-full bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="pt-6 pb-2">
-                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Dashboard Legislativo</h1>
-                <p class="text-slate-500 mt-1 text-sm font-medium">Panel de Control y Composición Política</p>
+    <div class="w-full bg-[#1b4332] relative overflow-hidden shadow-md sticky top-0 z-40">
+        <!-- Decoración curva estilo imagen -->
+        <div class="absolute right-0 top-0 h-full w-1/3 opacity-20 pointer-events-none overflow-hidden">
+            <div class="absolute right-[-10%] top-[-50%] w-64 h-64 rounded-full border-[20px] border-[#2d6a4f]/40"></div>
+            <div class="absolute right-[5%] top-[-20%] w-96 h-96 rounded-full border-[40px] border-[#2d6a4f]/20"></div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="pt-5 pb-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                <!-- Logo Izquierdo -->
+                <div class="bg-white rounded-xl p-2 shrink-0 h-16 w-auto flex items-center justify-center shadow-sm">
+                    <img src="cengoblogo.png
+                    " alt="Logo CENGOB" class="max-h-full object-contain">
+                </div>
+                
+                <!-- Títulos -->
+                <div class="flex-1">
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">Dashboard Legislativo</h1>
+                    <p class="text-white/80 mt-0.5 text-xs sm:text-sm font-medium">Panel de Control y Composición Política</p>
+                </div>
+
+                <!-- Logo Derecho (Opcional) -->
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2 shrink-0 h-16 w-16 hidden md:flex items-center justify-center border border-white/20">
+                    <img src="https://placehold.co/50x50/transparent/white?text=L2" alt="Logo Secundario" class="max-h-full object-contain opacity-80">
+                </div>
             </div>
-            
-            <div class="flex overflow-x-auto hide-scrollbar mt-4 border-b border-slate-100 gap-6" role="tablist">
-                <button onclick="switchMainTab('ejecutivo')" id="tab-btn-ejecutivo" role="tab" aria-selected="true" class="main-tab active pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Dashboard Ejecutivo</button>
+        </div>
+        
+        <!-- Contenedor de Pestañas con fondo blanco -->
+        <div class="w-full bg-white border-b border-slate-200 shadow-inner">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex overflow-x-auto hide-scrollbar pt-3 gap-6" role="tablist">
+                    <button onclick="switchMainTab('ejecutivo')" id="tab-btn-ejecutivo" role="tab" aria-selected="true" class="main-tab active pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Dashboard Ejecutivo</button>
                 <button onclick="switchMainTab('hemiciclo')" id="tab-btn-hemiciclo" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vista Hemiciclo</button>
                 <button onclick="switchMainTab('directorio')" id="tab-btn-directorio" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Directorio (Tabla)</button>
                 <button onclick="switchMainTab('voceria')" id="tab-btn-voceria" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Vocería y Prensa</button>
@@ -115,7 +140,9 @@
         <div id="view-hemiciclo" class="view-section animate-fade hidden" role="tabpanel">
             <div class="flex flex-wrap items-center gap-3 mb-6 bg-white p-2 rounded-xl shadow-sm border border-slate-200 inline-flex">
                 <button onclick="setChamber('diputados')" id="btn-diputados" class="chamber-btn active px-5 py-2.5 rounded-lg text-sm font-semibold transition-all">Diputados</button>
+                <button onclick="setChamber('diputados_suplentes')" id="btn-diputados_suplentes" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Diputados Suplentes</button>
                 <button onclick="setChamber('senadores')" id="btn-senadores" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Senadores</button>
+                <button onclick="setChamber('senadores_suplentes')" id="btn-senadores_suplentes" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Senadores Suplentes</button>
                 <button onclick="setChamber('supraestatales')" id="btn-supraestatales" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">Supraestatales</button>
                 <div class="h-6 w-px bg-slate-200 mx-1"></div>
                 <button onclick="setChamber('jefes')" id="btn-jefes" class="chamber-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all flex items-center">
@@ -131,12 +158,11 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div class="lg:col-span-8 flex flex-col items-center justify-center relative min-h-[450px]">
+                <div class="lg:col-span-8 flex flex-col items-center justify-center relative min-h-[450px] bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                     <div id="chart" class="w-full h-full flex justify-center"></div>
                 </div>
 
                 <div class="lg:col-span-4 flex flex-col justify-start pt-4 space-y-6">
-                    <div class="bg-slate-800 rounded-2xl p-6 shadow-lg text-white">
                         <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Aprobación de Normas</h3>
                         <div class="space-y-4">
                             <div class="flex justify-between items-center border-b border-slate-600 pb-3">
@@ -165,17 +191,37 @@
                         <input type="text" id="search-table" placeholder="Buscar legislador, comisión, cargo..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
                     </div>
                     
-                    <div class="flex gap-3 w-full md:w-auto overflow-x-auto hide-scrollbar pb-2 md:pb-0">
-                        <select id="filter-camara-tipo" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium shrink-0">
-                            <option value="">Cámara / Tipo: Todos</option>
-                        </select>
-                        <select id="filter-depto" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium shrink-0">
-                            <option value="">Departamento: Todos</option>
-                        </select>
-                        <select id="filter-partido" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium shrink-0">
-                            <option value="">Fuerza Política: Todas</option>
-                        </select>
-                        <select id="group-table" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium bg-slate-50 shrink-0">
+                    <div class="flex gap-3 w-full md:w-auto overflow-visible pb-2 md:pb-0 flex-wrap md:flex-nowrap">
+                        
+                        <!-- Filtro Cámara (Multiselect) -->
+                        <div class="relative custom-multiselect shrink-0">
+                            <button id="btn-ms-camara" data-label="Cámara" onclick="toggleDropdown('ms-camara')" class="border border-slate-200 bg-white text-slate-700 text-sm rounded-lg px-3 py-2 font-medium flex items-center justify-between w-48 shadow-sm">
+                                <span id="btn-text-ms-camara" class="truncate">Cámara: Todas</span>
+                                <svg class="w-4 h-4 ml-2 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="dd-ms-camara" class="multi-dropdown hidden absolute z-50 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1"></div>
+                        </div>
+
+                        <!-- Filtro Departamento (Multiselect) -->
+                        <div class="relative custom-multiselect shrink-0">
+                            <button id="btn-ms-depto" data-label="Depto" onclick="toggleDropdown('ms-depto')" class="border border-slate-200 bg-white text-slate-700 text-sm rounded-lg px-3 py-2 font-medium flex items-center justify-between w-40 shadow-sm">
+                                <span id="btn-text-ms-depto" class="truncate">Depto: Todos</span>
+                                <svg class="w-4 h-4 ml-2 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="dd-ms-depto" class="multi-dropdown hidden absolute z-50 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1"></div>
+                        </div>
+
+                        <!-- Filtro Partido (Multiselect) -->
+                        <div class="relative custom-multiselect shrink-0">
+                            <button id="btn-ms-partido" data-label="Fuerza Política" onclick="toggleDropdown('ms-partido')" class="border border-slate-200 bg-white text-slate-700 text-sm rounded-lg px-3 py-2 font-medium flex items-center justify-between w-48 shadow-sm">
+                                <span id="btn-text-ms-partido" class="truncate">Fuerza Política: Todas</span>
+                                <svg class="w-4 h-4 ml-2 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="dd-ms-partido" class="multi-dropdown hidden absolute z-50 mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-1 right-0 md:right-auto"></div>
+                        </div>
+
+                        <!-- Agrupación (Se mantiene normal) -->
+                        <select id="group-table" class="border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 font-medium bg-slate-50 shrink-0 shadow-sm">
                             <option value="ninguno">Sin Agrupar</option>
                             <option value="partido">Agrupar por Partido</option>
                             <option value="departamento">Agrupar por Departamento</option>
@@ -198,10 +244,33 @@
                                 <th class="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 bg-blue-50 text-blue-800" onclick="sortTable('alineacion')">Alineación ↕</th>
                             </tr>
                         </thead>
-                        <tbody id="table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+                       <tbody id="table-body" class="divide-y divide-slate-100 text-sm"></tbody>
                     </table>
                 </div>
                 <div id="table-empty" class="hidden text-center py-10 text-slate-500 font-medium text-sm">No se encontraron asambleístas con esos criterios.</div>
+
+                <!-- Cuadro Resumen -->
+                <div id="directorio-summary" class="mt-6 bg-slate-50/50 rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-center">
+                        <div class="bg-blue-100 p-2 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Filtrados</div>
+                            <div class="text-xl font-black text-slate-800" id="sum-total">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-2 flex-1 w-full md:w-auto">
+                        <div class="flex gap-4 text-sm font-semibold border-b border-slate-200 pb-2">
+                            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span>Diputados: <span id="sum-dip">0</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Senadores: <span id="sum-sen">0</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-purple-500"></span>Supraestatales: <span id="sum-sup">0</span></div>
+                        </div>
+                        <div id="sum-parties" class="flex flex-wrap gap-1.5 text-[10px] font-bold"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -675,18 +744,10 @@
             Array.from(comisiones).sort().forEach(c => cHtml += `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`);
             document.getElementById("comision-selector").innerHTML = cHtml;
 
-            let pHtml = '<option value="">Fuerza Política: Todas</option>';
-            Array.from(partidos).sort().forEach(p => pHtml += `<option value="${escapeHTML(p)}">${escapeHTML(p)}</option>`);
-            document.getElementById("filter-partido").innerHTML = pHtml;
-            
-            let dHtml = '<option value="">Departamento: Todos</option>';
-            if(deptos) Array.from(deptos).sort().forEach(d => dHtml += `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`);
-            document.getElementById("filter-depto").innerHTML = dHtml;
-            
-            let mHtml = '<option value="">Cámara / Tipo: Todos</option>';
-            if(camaras) Array.from(camaras).sort().forEach(m => mHtml += `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`);
-            const camaraSelector = document.getElementById("filter-camara-tipo");
-            if(camaraSelector) camaraSelector.innerHTML = mHtml;
+            // Construir multiselects personalizados
+            if (partidos) buildMultiSelect('ms-partido', partidos);
+            if (deptos) buildMultiSelect('ms-depto', deptos);
+            if (camaras) buildMultiSelect('ms-camara', camaras);
         }
 
         function showFallbackError() {
@@ -706,6 +767,79 @@
             populateSelects(new Set(["Constitución", "Economía"]), new Set(fallbackData.map(x=>x.partido)), new Set(["La Paz", "Santa Cruz"]), new Set(["Diputado Plurinominal", "Senador"]));
             populateLeyes([]); populateInterpelaciones([]);
             updateDashboard(); renderEjecutivo(); renderDirectorio(); renderVoceria(); runSmartSimulation(); runSmartInterpelacion(); renderImageMap();
+        }
+
+        /* Funciones para Multiselect Personalizado */
+        function toggleDropdown(id) {
+            document.querySelectorAll('.multi-dropdown').forEach(d => {
+                if (d.id !== 'dd-' + id) d.classList.add('hidden');
+            });
+            document.getElementById('dd-' + id).classList.toggle('hidden');
+        }
+
+        // Cierra los dropdowns si se hace clic afuera
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.custom-multiselect')) {
+                document.querySelectorAll('.multi-dropdown').forEach(d => d.classList.add('hidden'));
+            }
+        });
+
+        function buildMultiSelect(id, items) {
+            const container = document.getElementById('dd-' + id);
+            if(!container) return;
+            const labelStr = document.getElementById('btn-' + id).getAttribute('data-label');
+            
+            let html = `
+                <label class="flex items-center p-2 hover:bg-slate-50 cursor-pointer text-sm rounded-md transition-colors">
+                    <input type="checkbox" class="mr-2 rounded border-slate-300 text-blue-600 focus:ring-blue-500" onchange="toggleAllMs('${id}', this.checked)" checked> 
+                    <span class="font-bold text-slate-800">Seleccionar Todos</span>
+                </label>
+                <div class="h-px bg-slate-100 my-1 mx-2"></div>
+            `;
+            
+            Array.from(items).sort().forEach(item => {
+                html += `
+                    <label class="flex items-center p-2 hover:bg-slate-50 cursor-pointer text-sm rounded-md transition-colors">
+                        <input type="checkbox" value="${escapeHTML(item)}" class="mr-2 rounded border-slate-300 text-blue-600 focus:ring-blue-500 ms-item-${id}" checked onchange="updateMsLabel('${id}')"> 
+                        <span class="text-slate-700 font-medium">${escapeHTML(item)}</span>
+                    </label>
+                `;
+            });
+            
+            container.innerHTML = html;
+            updateMsLabel(id, false);
+        }
+
+        function toggleAllMs(id, checked) {
+            document.querySelectorAll(`.ms-item-${id}`).forEach(cb => cb.checked = checked);
+            updateMsLabel(id, true);
+        }
+
+        function updateMsLabel(id, triggerRender = true) {
+            const total = document.querySelectorAll(`.ms-item-${id}`).length;
+            const checkedBoxes = document.querySelectorAll(`.ms-item-${id}:checked`);
+            const checked = checkedBoxes.length;
+            const btnText = document.getElementById('btn-text-' + id);
+            const labelStr = document.getElementById('btn-' + id).getAttribute('data-label');
+            
+            if (checked === total) {
+                btnText.textContent = `${labelStr}: Todas`;
+            } else if (checked === 0) {
+                btnText.textContent = `${labelStr}: Ninguno`;
+            } else if (checked === 1) {
+                btnText.textContent = checkedBoxes[0].nextElementSibling.textContent;
+            } else {
+                btnText.textContent = `${labelStr}: ${checked} selec.`;
+            }
+            
+            if(triggerRender && typeof renderDirectorio === 'function') {
+                renderDirectorio();
+            }
+        }
+
+        function getMsValues(id) {
+            const checkboxes = document.querySelectorAll(`.ms-item-${id}:checked`);
+            return Array.from(checkboxes).map(cb => cb.value);
         }
 
         function switchMainTab(tabId) {
@@ -786,16 +920,16 @@
 
         function renderDirectorio() {
             let sText = document.getElementById('search-table').value.toLowerCase();
-            let pFilter = document.getElementById('filter-partido').value;
-            let mFilter = document.getElementById('filter-camara-tipo').value;
-            let dFilter = document.getElementById('filter-depto').value;
+            let pFilters = getMsValues('ms-partido');
+            let mFilters = getMsValues('ms-camara');
+            let dFilters = getMsValues('ms-depto');
             let groupObj = document.getElementById('group-table').value;
 
             let filtered = legisladoresData.filter(d => {
-                let matchText = d.titular.toLowerCase().includes(sText) || d.partido.toLowerCase().includes(sText) || d.comision.toLowerCase().includes(sText) || d.cargo.toLowerCase().includes(sText);
-                let matchPart = pFilter === "" || d.partido === pFilter;
-                let matchDepto = dFilter === "" || d.departamento === dFilter;
-                let matchMandato = mFilter === "" || d.camaraExacta === mFilter;
+                let matchText = d.titular.toLowerCase().includes(sText) || d.partido.toLowerCase().includes(sText) || d.comision.toLowerCase().includes(sText) || d.cargo.toLowerCase().includes(sText) || d.suplente.toLowerCase().includes(sText);
+                let matchPart = pFilters.length === 0 || pFilters.includes(d.partido);
+                let matchDepto = dFilters.length === 0 || dFilters.includes(d.departamento);
+                let matchMandato = mFilters.length === 0 || mFilters.includes(d.camaraExacta);
                 
                 return matchText && matchPart && matchDepto && matchMandato;
             });
@@ -812,47 +946,76 @@
             let tbody = document.getElementById('table-body');
             let emptyMsg = document.getElementById('table-empty');
             
-            if (filtered.length === 0) { emptyMsg.classList.remove('hidden'); tbody.innerHTML = ''; return; }
-            emptyMsg.classList.add('hidden');
+            // Lógica del Cuadro Resumen
+            let dipCount = 0, senCount = 0, supCount = 0;
+            let partyCounts = {};
             
-            let htmlContent = '';
-            let currentGroup = null;
+            if (filtered.length === 0) { 
+                emptyMsg.classList.remove('hidden'); 
+                tbody.innerHTML = ''; 
+            } else {
+                emptyMsg.classList.add('hidden');
+                
+                let htmlContent = '';
+                let currentGroup = null;
 
-            filtered.forEach(d => {
-                if(groupObj !== "ninguno") {
-                    let grpVal = d[groupObj];
-                    if(grpVal !== currentGroup) {
-                        currentGroup = grpVal;
-                        htmlContent += `<tr class="bg-slate-100"><td colspan="8" class="p-3 text-xs font-black text-slate-600 uppercase tracking-widest">${escapeHTML(currentGroup)}</td></tr>`;
+                filtered.forEach(d => {
+                    // Contadores para resumen
+                    if(d.camara === 'diputados') dipCount++;
+                    else if(d.camara === 'senadores') senCount++;
+                    else if(d.camara === 'supraestatales') supCount++;
+                    
+                    partyCounts[d.partido] = (partyCounts[d.partido] || 0) + 1;
+
+                    if(groupObj !== "ninguno") {
+                        let grpVal = d[groupObj];
+                        if(grpVal !== currentGroup) {
+                            currentGroup = grpVal;
+                            htmlContent += `<tr class="bg-slate-100"><td colspan="9" class="p-3 text-xs font-black text-slate-600 uppercase tracking-widest border-y border-slate-200">${escapeHTML(currentGroup)}</td></tr>`;
+                        }
                     }
-                }
-                const imgHTML = getImgTag(d.fotoTitular, d.titular, "w-8 h-8", "rounded border border-slate-200");
-                let alColor = d.alineacion >= 80 ? 'bg-emerald-500' : (d.alineacion >= 50 ? 'bg-amber-400' : 'bg-red-500');
+                    const imgHTML = getImgTag(d.fotoTitular, d.titular, "w-8 h-8", "rounded border border-slate-200");
+                    let alColor = d.alineacion >= 80 ? 'bg-emerald-500' : (d.alineacion >= 50 ? 'bg-amber-400' : 'bg-red-500');
 
-                htmlContent += `
-                    <tr class="hover:bg-blue-50/50 transition-colors group cursor-pointer" onclick="showModalById('${d.id}')">
-                        <td class="p-2 pl-3">${imgHTML}</td>
-                        <td class="p-3"><div class="font-bold text-slate-800">${d.titular}</div><div class="text-[10px] uppercase font-bold text-slate-400">${d.cargo}</div></td>
-                        <td class="p-3 font-bold" style="color: ${d.color}">${d.partido}</td>
-                        <td class="p-3 text-slate-600 uppercase text-xs font-bold tracking-wide">${escapeHTML(d.camaraExacta)}</td>
-                        <td class="p-3 text-slate-600">${d.departamento}</td>
-                        <td class="p-3 text-slate-600 font-medium">${d.circunscripcion}</td>
-                        <td class="p-3 text-slate-600 text-xs">${d.comision}</td>
-                        <td class="p-3">
-                            <div class="flex items-center w-full min-w-[80px]">
-                                <span class="text-xs font-bold text-slate-700 w-8 text-right mr-2">${d.alineacion}%</span>
-                                <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="h-1.5 rounded-full ${alColor}" style="width: ${d.alineacion}%"></div></div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                    htmlContent += `
+                        <tr class="hover:bg-blue-50/50 transition-colors group cursor-pointer" onclick="showModalById('${d.id}')">
+                            <td class="p-2 pl-3">${imgHTML}</td>
+                            <td class="p-3"><div class="font-bold text-slate-800">${d.titular}</div><div class="text-[10px] uppercase font-bold text-slate-400">${d.cargo}</div></td>
+                            <td class="p-3 text-slate-600 font-medium">${d.suplente}</td>
+                            <td class="p-3 font-bold" style="color: ${d.color}">${d.partido}</td>
+                            <td class="p-3 text-slate-600 uppercase text-xs font-bold tracking-wide">${escapeHTML(d.camaraExacta)}</td>
+                            <td class="p-3 text-slate-600">${d.departamento}</td>
+                            <td class="p-3 text-slate-600 font-medium">${d.circunscripcion}</td>
+                            <td class="p-3 text-slate-600 text-xs">${d.comision}</td>
+                            <td class="p-3">
+                                <div class="flex items-center w-full min-w-[80px]">
+                                    <span class="text-xs font-bold text-slate-700 w-8 text-right mr-2">${d.alineacion}%</span>
+                                    <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="h-1.5 rounded-full ${alColor}" style="width: ${d.alineacion}%"></div></div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = htmlContent;
+            }
+
+            // Actualizar DOM del Resumen
+            document.getElementById('sum-total').textContent = filtered.length;
+            document.getElementById('sum-dip').textContent = dipCount;
+            document.getElementById('sum-sen').textContent = senCount;
+            document.getElementById('sum-sup').textContent = supCount;
+            
+            let pHtml = '';
+            // Ordenar partidos por cantidad
+            let sortedParties = Object.keys(partyCounts).sort((a,b) => partyCounts[b] - partyCounts[a]);
+            sortedParties.forEach(p => {
+                pHtml += `<span class="px-2.5 py-1 bg-white border border-slate-200 rounded-md shadow-sm uppercase tracking-wider" style="color:${getPartyColor(p)}">${p}: ${partyCounts[p]}</span>`;
             });
-            tbody.innerHTML = htmlContent;
+            document.getElementById('sum-parties').innerHTML = pHtml;
         }
+
+        // Event Listeners (Actualizados)
         document.getElementById('search-table').addEventListener('keyup', renderDirectorio);
-        document.getElementById('filter-partido').addEventListener('change', renderDirectorio);
-        document.getElementById('filter-camara-tipo').addEventListener('change', renderDirectorio);
-        document.getElementById('filter-depto').addEventListener('change', renderDirectorio);
         document.getElementById('group-table').addEventListener('change', renderDirectorio);
 
         function renderVoceria() {
@@ -928,7 +1091,9 @@
         }
 
         function updateDashboard() {
-            let activeData = currentChamber === 'jefes' ? legisladoresData.filter(d => d.cargo.toLowerCase().includes('jefe') || d.cargo.toLowerCase().includes('bancada')) : legisladoresData.filter(d => d.camara === currentChamber);
+            let baseChamber = currentChamber.replace('_suplentes', '');
+            let activeData = currentChamber === 'jefes' ? legisladoresData.filter(d => d.cargo.toLowerCase().includes('jefe') || d.cargo.toLowerCase().includes('bancada')) : legisladoresData.filter(d => d.camara === baseChamber);
+            
             let partyMap = new Map();
             activeData.forEach(leg => {
                 if (!partyMap.has(leg.partido)) partyMap.set(leg.partido, { partido: leg.partido, count: 0, color: leg.color, order: leg.order, miembros: [] });
@@ -946,10 +1111,12 @@
                 else { elAbs.textContent = Math.floor(totalSeats / 2) + 1; elTwo.textContent = Math.ceil(totalSeats * (2/3)); }
             } else { elAbs.textContent = "0"; elTwo.textContent = "0"; }
 
-            drawParliamentChart(chartData, totalSeats, "#chart"); drawLegend(legendData);
+            const isSuplente = currentChamber.includes('_suplentes');
+            drawParliamentChart(chartData, totalSeats, "#chart", isSuplente); 
+            drawLegend(legendData);
         }
 
-        function drawParliamentChart(data, totalSeats, containerId) {
+        function drawParliamentChart(data, totalSeats, containerId, isSuplente = false) {
             d3.select(containerId).selectAll("*").remove();
             if(totalSeats === 0) return;
             const cFiltro = document.getElementById("comision-selector") ? document.getElementById("comision-selector").value : "todas";
@@ -967,14 +1134,20 @@
                 .style("cursor", "pointer")
                 .on("mouseover", function(event, d) {
                     d3.select(this).attr("stroke", "#0f172a").attr("stroke-width", 2);
-                    const av = getImgTag(d.fotoTitular, d.titular, "w-16 h-16", "rounded-full shadow-sm border-2 border-white absolute -top-8 left-1/2 transform -translate-x-1/2");
-                    tooltip.html(`<div class="relative pt-10 pb-4 px-5 text-center w-64">${av}<div class="text-[9px] font-black uppercase tracking-widest mb-1 mt-1 text-slate-400">${d.cargo}</div><div class="font-black text-slate-800 text-base leading-tight mb-0.5">${d.titular}</div><div class="text-xs font-semibold" style="color: ${d.color};">${d.partido}</div><div class="mt-4 grid grid-cols-2 gap-2 text-left bg-slate-50 p-2 rounded-lg border border-slate-100"><div><div class="text-[9px] font-bold text-slate-400 uppercase">Depto</div><div class="text-xs font-bold text-slate-700 truncate">${d.departamento}</div></div><div><div class="text-[9px] font-bold text-slate-400 uppercase">Circ</div><div class="text-xs font-bold text-slate-700 truncate">${d.circunscripcion}</div></div></div></div>`);
+                    
+                    let mainName = isSuplente ? d.suplente : d.titular;
+                    let mainPhoto = isSuplente ? d.fotoSuplente : d.fotoTitular;
+                    let roleLabel = isSuplente ? "SUPLENTE" : d.cargo;
+                    
+                    const av = getImgTag(mainPhoto, mainName, "w-16 h-16", "rounded-full shadow-sm border-2 border-white absolute -top-8 left-1/2 transform -translate-x-1/2", d.color);
+                    
+                    tooltip.html(`<div class="relative pt-10 pb-4 px-5 text-center w-64">${av}<div class="text-[9px] font-black uppercase tracking-widest mb-1 mt-1 text-slate-400">${roleLabel}</div><div class="font-black text-slate-800 text-base leading-tight mb-0.5">${mainName}</div><div class="text-xs font-semibold" style="color: ${d.color};">${d.partido}</div><div class="mt-4 grid grid-cols-2 gap-2 text-left bg-slate-50 p-2 rounded-lg border border-slate-100"><div><div class="text-[9px] font-bold text-slate-400 uppercase">Depto</div><div class="text-xs font-bold text-slate-700 truncate">${d.departamento}</div></div><div><div class="text-[9px] font-bold text-slate-400 uppercase">Circ</div><div class="text-xs font-bold text-slate-700 truncate">${d.circunscripcion}</div></div></div></div>`);
                     const pos = positionTooltip(event, tooltip.node());
                     tooltip.style("left", pos.left + "px").style("top", pos.top + "px");
                     tooltip.transition().duration(150).style("opacity", 1);
                 })
                 .on("mouseout", function() { d3.select(this).attr("stroke", "none"); tooltip.transition().duration(200).style("opacity", 0); })
-                .on("click", (event, d) => showModalById(d.id))
+                .on("click", (event, d) => showModalById(d.id, isSuplente))
                 .transition().delay((d, i) => i * (800 / totalSeats)).duration(400).attr("r", totalSeats > 100 ? 8 : 11);
 
             svg.append("text").attr("text-anchor", "middle").attr("x", 0).attr("y", -10).text(totalSeats).style("font-size", "64px").style("font-weight", "900").style("font-family", "Inter").style("fill", "#0f172a");
@@ -1150,15 +1323,24 @@
             Object.values(simulationStateInt).forEach(v => { if(v==='censurado') vCen++; else if(v==='nocensurado') vNoCen++; else vConf++; });
             document.getElementById('int-count-censurado').textContent = vCen; document.getElementById('int-count-nocensurado').textContent = vNoCen; document.getElementById('int-count-confianza').textContent = vConf;
             let badge = document.getElementById('int-result-badge');
-            const totalSeats = legisladoresData.length; const twoThirds = Math.ceil(totalSeats * (2/3));
-            if (totalSeats > 0) {
-                if(vCen >= twoThirds) { badge.textContent = "Ministro Censurado (2/3 Alcanzados)"; badge.className = "px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider bg-red-100 text-red-700"; } 
-                else { badge.textContent = "Censura Rechazada"; badge.className = "px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider bg-green-100 text-green-700"; }
+            
+            // Lógica para determinar el estado (se requieren 2/3 para censurar)
+            const dosTercios = Math.ceil(legisladoresData.length * (2/3));
+            if(vCen >= dosTercios) { 
+                badge.textContent = "Censurado (2/3)"; 
+                badge.className = "px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider bg-red-100 text-red-700"; 
+            } else { 
+                badge.textContent = "No Censurado"; 
+                badge.className = "px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider bg-amber-100 text-amber-700"; 
             }
-            d3.select("#chart-interpelacion").selectAll("*").remove(); if(totalSeats===0) return;
-            const width = 600, height = 350; const svg = d3.select("#chart-interpelacion").append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`).attr("preserveAspectRatio", "xMidYMid meet").append("g").attr("transform", `translate(${width / 2}, ${height - 20})`); 
+            
+            d3.select("#chart-interpelacion").selectAll("*").remove(); 
+            const totalSeats = legisladoresData.length; if(totalSeats===0) return;
+            const width = 600, height = 350; 
+            const svg = d3.select("#chart-interpelacion").append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`).attr("preserveAspectRatio", "xMidYMid meet").append("g").attr("transform", `translate(${width / 2}, ${height - 20})`); 
             let orderedData = [...legisladoresData].sort((a,b) => (fallbackData.find(f => f.partido === a.partido)?.order || 99) - (fallbackData.find(f => f.partido === b.partido)?.order || 99));
-            const points = getParliamentPoints(totalSeats, 5, 100, 260); const tooltip = d3.select("#tooltip");
+            const points = getParliamentPoints(totalSeats, 5, 100, 260); 
+            const tooltip = d3.select("#tooltip");
             
             svg.selectAll("circle").data(orderedData).enter().append("circle")
                 .attr("cx", (d,i) => points[i].x).attr("cy", (d,i) => points[i].y).attr("r", 7)
@@ -1166,7 +1348,11 @@
                 .style("cursor", "pointer")
                 .on("mouseover", function(event, d) { tooltip.html(`<div class="px-3 py-2 font-bold text-sm">${d.titular}<br><span class="text-xs" style="color:${d.color}">${d.partido} (Alineación: ${d.alineacion}%)</span></div>`); tooltip.style("opacity", 0).style("display", "block"); setTimeout(() => { const pos = positionTooltip(event, tooltip.node()); tooltip.style("left", pos.left + "px").style("top", pos.top + "px"); tooltip.transition().duration(150).style("opacity", 1); }, 0); })
                 .on("mouseout", () => tooltip.transition().style("opacity", 0))
-                .on("click", function(event, d) { let curr = simulationStateInt[d.id]; simulationStateInt[d.id] = curr === 'confianza' ? 'censurado' : (curr === 'censurado' ? 'nocensurado' : 'confianza'); renderInterpelacionChart(); });
+                .on("click", function(event, d) { 
+                    let curr = simulationStateInt[d.id]; 
+                    simulationStateInt[d.id] = curr === 'confianza' ? 'nocensurado' : (curr === 'nocensurado' ? 'censurado' : 'confianza'); 
+                    renderInterpelacionChart(); 
+                });
         }
 
         function showModalById(id) {
