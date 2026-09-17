@@ -69,6 +69,7 @@
                     <button onclick="switchMainTab('intensidad')" id="tab-btn-intensidad" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Intensidad / Alineación</button>
                     <button onclick="switchMainTab('simulacion')" id="tab-btn-simulacion" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Simulador de Leyes</button>
                     <button onclick="switchMainTab('interpelacion')" id="tab-btn-interpelacion" role="tab" aria-selected="false" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Simulador Interpelaciones</button>
+                    <button onclick="switchMainTab('votaciones')" id="tab-btn-votaciones" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap" role="tab" aria-selected="false">Votaciones</button>
                     <button onclick="switchMainTab('leyes-sancionadas')" id="tab-btn-leyes-sancionadas" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap" role="tab" aria-selected="false">Leyes Sancionadas</button>
                     <button onclick="switchMainTab('peticiones-informe')" id="tab-btn-peticiones-informe" class="main-tab pb-3 px-1 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap" role="tab" aria-selected="false">Peticiones de Informe</button>
                 </div>
@@ -131,6 +132,62 @@
                                 </tr>
                             </thead>
                             <tbody id="exec-matrix-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Votaciones View -->
+        <div id="view-votaciones" class="view-section animate-fade hidden" role="tabpanel">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl font-black text-slate-800 mb-1" id="vot-total">0</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Total Votos</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl font-black text-green-500 mb-1" id="vot-aprueba">0</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Aprueba</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl font-black text-red-500 mb-1" id="vot-rechaza">0</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Rechaza</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                    <div class="text-4xl font-black text-slate-500 mb-1" id="vot-otros">0</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Otros / Ausente</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-8 mb-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="px-6 py-5 border-b border-slate-100 bg-slate-50">
+                        <h3 class="text-lg font-bold text-slate-800">Mapa de Votación (Estado de Excepción)</h3>
+                        <p class="text-xs text-slate-500 mt-1"> <b>Clic</b> en un legislador para ver su perfil detallado.</p>
+                    </div>
+                    <div class="relative w-full overflow-hidden bg-slate-900 flex-1 flex items-center justify-center p-4">
+                        <div class="relative w-full max-w-5xl mx-auto">
+                            <img src="asamblea2.jpg" class="w-full h-auto object-contain cursor-crosshair opacity-90 hover:opacity-100 transition-opacity" alt="Foto del Hemiciclo">
+                            <div id="image-hotspots-votaciones" class="absolute inset-0 pointer-events-none w-full h-full"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-slate-100 bg-slate-50">
+                        <h3 class="text-lg font-bold text-slate-800">Votación por Fuerza Política</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50">
+                                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">Fuerza Política</th>
+                                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 text-center">Aprueba</th>
+                                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 text-center">Rechaza</th>
+                                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 text-center">Otros</th>
+                                    <th class="p-4 text-xs font-black text-slate-800 uppercase tracking-wider border-b border-slate-200 bg-slate-100 text-center">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="votaciones-matrix-body" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -761,6 +818,7 @@
             runSmartSimulation();
             runSmartInterpelacion();
             renderImageMap(); 
+            if(typeof renderVotaciones === 'function') renderVotaciones();
         }
 
         function populateLeyes(leyesData) {
@@ -903,6 +961,7 @@
             if(tabId === 'intensidad') renderIntensidad();
             if(tabId === 'simulacion') renderSimulacionChart();
             if(tabId === 'interpelacion') renderInterpelacionChart();
+            if(tabId === 'votaciones') renderVotaciones();
         }
 
         function setChamber(chamber) {
@@ -1221,15 +1280,20 @@
                         </div>`;
                 }
             });
+            
             container.innerHTML = htmlContent;
         }
 
-        function showHotspotTooltip(event, id) {
+        function showHotspotTooltip(event, id, overrideColor = null, overrideStatus = null) {
             const d = legisladoresData.find(x => x.id === id);
             if(!d) return;
             const tooltip = d3.select("#tooltip");
-            const av = getImgTag(d.fotoTitular, d.titular, "w-12 h-12", "rounded-full shadow-sm border-2 mx-auto mb-2", d.color);
-            tooltip.html(`<div class="px-4 py-3 text-center w-48">${av}<div class="font-black text-slate-800 leading-tight text-sm">${d.titular}</div><div class="text-[10px] font-bold uppercase mt-1" style="color: ${d.color};">${d.partido}</div></div>`);
+            
+            const colorToUse = overrideColor || d.color;
+            const statusHtml = overrideStatus ? `<div class="mt-2 text-xs font-black uppercase rounded py-0.5" style="background-color: ${colorToUse}20; color: ${colorToUse}">${overrideStatus}</div>` : '';
+            
+            const av = getImgTag(d.fotoTitular, d.titular, "w-12 h-12", "rounded-full shadow-sm border-2 mx-auto mb-2", colorToUse);
+            tooltip.html(`<div class="px-4 py-3 text-center w-48">${av}<div class="font-black text-slate-800 leading-tight text-sm">${d.titular}</div><div class="text-[10px] font-bold uppercase mt-1" style="color: ${d.color};">${d.partido}</div>${statusHtml}</div>`);
             
             tooltip.style("opacity", 0).style("display", "block");
             setTimeout(() => {
@@ -1465,12 +1529,14 @@
            ========================================================================= */
         let leyesSancionadasData = [];
         let peticionesInformeData = [];
+        let votosEstadoExcepcion = {};
 
         function loadExtraTabsData() {
             const sheetId = '1Ibepk-mNDpz10F8iAtxuqLxjR0Y1rE_LbkT3bPQBsz8';
             // Descargar nuevas hojas
             const urlLeyesSanc = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=Leyes_Sancionadas`;
             const urlPeticiones = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=Peticiones_Informe`;
+            const urlVotaciones = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('estado de excepcion')}`;
 
             Papa.parse(urlLeyesSanc, {
                 download: true, header: true, skipEmptyLines: true,
@@ -1487,6 +1553,101 @@
                     renderPeticionesInforme(); 
                 }
             });
+            
+            Papa.parse(urlVotaciones, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(res) { 
+                    processVotacionesData(res.data);
+                    renderVotaciones();
+                }
+            });
+        }
+        
+        function processVotacionesData(data) {
+            votosEstadoExcepcion = {};
+            data.forEach(row => {
+                let nombre = getSafeCol(row, ["Titular", "Nombre Titular", "Nombre", "Legislador", "Asambleista"], "").toLowerCase().trim();
+                let voto = getSafeCol(row, ["Voto", "Decisión", "Postura", "Decision"], "otros").toLowerCase().trim();
+                
+                let voteType = "otros";
+                if(voto.includes("aprueba") || voto.includes("favor") || voto.includes("sí") || voto.includes("si") || voto === "aprueba") voteType = "aprueba";
+                else if(voto.includes("rechaza") || voto.includes("contra") || voto.includes("no") || voto === "rechaza") voteType = "rechaza";
+                
+                if(nombre) {
+                    votosEstadoExcepcion[nombre] = voteType;
+                }
+            });
+        }
+
+        function getVoteForLegislador(nombre) {
+            let key = nombre.toLowerCase().trim();
+            if(votosEstadoExcepcion[key]) return votosEstadoExcepcion[key];
+            for(let vName in votosEstadoExcepcion) {
+                if(vName.includes(key) || key.includes(vName)) return votosEstadoExcepcion[vName];
+            }
+            return "otros";
+        }
+
+        function renderVotaciones() {
+            let container = document.getElementById('image-hotspots-votaciones');
+            if(!container || legisladoresData.length === 0) return;
+            container.innerHTML = '';
+            let htmlContent = '';
+            
+            let stats = { aprueba: 0, rechaza: 0, otros: 0, total: 0 };
+            let partyStats = {};
+
+            legisladoresData.forEach(d => {
+                let vote = getVoteForLegislador(d.titular);
+                stats[vote]++;
+                stats.total++;
+                
+                if(!partyStats[d.partido]) {
+                    partyStats[d.partido] = { partido: d.partido, color: d.color, aprueba: 0, rechaza: 0, otros: 0, total: 0 };
+                }
+                partyStats[d.partido][vote]++;
+                partyStats[d.partido].total++;
+
+                let voteColor = "#94a3b8"; // slate-400 (otros)
+                if (vote === 'aprueba') voteColor = "#22c55e"; // green-500
+                else if (vote === 'rechaza') voteColor = "#ef4444"; // red-500
+
+                if (d.coordX !== null && d.coordY !== null) {
+                    htmlContent += `
+                        <div class="hotspot absolute w-4 h-4 rounded-full border-2 border-white shadow-md cursor-pointer transition-all duration-200 hover:scale-150 z-40 pointer-events-auto" 
+                             style="left: ${d.coordX}%; top: ${d.coordY}%; background-color: ${voteColor}; opacity: 0.9;"
+                             onmouseenter="showHotspotTooltip(event, '${d.id}', '${voteColor}', '${vote.toUpperCase()}')"
+                             onmouseleave="hideHotspotTooltip()"
+                             onclick="showModalById('${d.id}')">
+                        </div>`;
+                }
+            });
+            
+            container.innerHTML = htmlContent;
+
+            document.getElementById('vot-total').textContent = stats.total;
+            document.getElementById('vot-aprueba').textContent = stats.aprueba;
+            document.getElementById('vot-rechaza').textContent = stats.rechaza;
+            document.getElementById('vot-otros').textContent = stats.otros;
+
+            let sortedStats = Object.values(partyStats).sort((a, b) => b.total - a.total);
+            let tableHtml = '';
+            sortedStats.forEach((s, idx) => {
+                let safeP = escapeHTML(s.partido);
+                tableHtml += `
+                    <tr class="hover:bg-slate-50 transition-colors animate-fade" style="animation-delay: ${idx * 0.05}s; opacity:0; animation-fill-mode: forwards;">
+                        <td class="p-4 border-b border-slate-100 flex items-center">
+                            <div class="w-4 h-4 rounded-full mr-3 shrink-0" style="background-color: ${s.color}"></div>
+                            <span class="font-bold text-slate-700 uppercase">${safeP}</span>
+                        </td>
+                        <td class="p-4 border-b border-slate-100 text-center font-black text-green-600">${s.aprueba || '-'}</td>
+                        <td class="p-4 border-b border-slate-100 text-center font-black text-red-600">${s.rechaza || '-'}</td>
+                        <td class="p-4 border-b border-slate-100 text-center font-black text-slate-500">${s.otros || '-'}</td>
+                        <td class="p-4 border-b border-slate-100 text-center font-black text-slate-800 bg-slate-50/50">${s.total}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('votaciones-matrix-body').innerHTML = tableHtml;
         }
 
         // Renderizador de Leyes Sancionadas
